@@ -54,15 +54,16 @@ services: **MySQL** and the **Beacon API**.
 
 3) Add the API service
    - + New → GitHub Repo → same repository again (or “Empty service” → connect repo).
-   - **Pick one build setup** (if you skip both, Railway uses Railpack on the repo root and `npm ci`
-     often fails or installs the wrong app):
-     - **A (recommended):** Service → Settings → **Root Directory** → `server`  
-       (Railway uses `server/Dockerfile` and `server/railway.toml`.)
-     - **B:** Leave **Root Directory** empty (repo root). Service → **Variables** → add  
-       **`RAILWAY_DOCKERFILE_PATH`** = **`Dockerfile.api`**  
-       (builds the API from the `Dockerfile.api` at the repository root — no need to set Root Directory.)
-   - Your GitHub branch must include **`server/package-lock.json`**. Push latest `main` if the deploy
-     shows an old commit (e.g. only “docs: README”) without the full `server/` tree.
+   - **Build configuration** (pick one — if you skip all, Railpack runs `npm ci` on the **repo root**
+     Vite app and can fail if the root `package-lock.json` drifts):
+     - **A:** The repo includes **`railway.toml`** at the **repository root**; it sets
+       `Dockerfile.api` so a service connected with default root directory builds the **API**
+       with Docker (recommended for this monorepo).
+     - **B:** Service → Settings → **Root Directory** → `server` (uses `server/Dockerfile`).
+     - **C:** Leave Root Directory empty and set **Variables** → **`RAILWAY_DOCKERFILE_PATH`** =
+       **`Dockerfile.api`** (overrides auto-detect if `railway.toml` is not picked up).
+   - Your GitHub branch must include **`server/package-lock.json`** (API image) and a consistent
+     root **`package-lock.json`** if Railpack ever builds the frontend on Railway.
    - Service → Settings → **Networking** → Generate Domain (public HTTPS URL). This is your API base
      (e.g. https://beacon-api-production.up.railway.app). No trailing slash.
 

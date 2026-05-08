@@ -1,0 +1,11 @@
+# Default Railway build for this monorepo when the service uses the repository root.
+# Builds the Node API via Dockerfile.api (not the Vite frontend). Vercel hosts the SPA.
+# If you use a service with Root Directory = server instead, Railway uses server/railway.toml.
+
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile.api"
+
+[deploy]
+healthcheckPath = "/api/health"
+healthcheckTimeout = 300
