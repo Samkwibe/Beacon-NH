@@ -11,6 +11,10 @@ interface ImportMetaEnv {
   readonly VITE_LOCAL_ADMIN_PASSWORD: string
   readonly VITE_CONTACT_EMAIL: string
   readonly VITE_API_URL: string
+  /** When "true", production builds expose the admin UI route (still requires Firebase/local login). */
+  readonly VITE_PUBLIC_ADMIN?: string
+  /** Optional single URL segment; default admin. */
+  readonly VITE_ADMIN_ROUTE?: string
 }
 
 interface ImportMeta {

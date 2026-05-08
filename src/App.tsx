@@ -4,6 +4,7 @@ import {
   Routes,
   Route,
   useLocation,
+  Navigate,
 } from 'react-router-dom'
 import { Navigation } from './components/Navigation'
 import { Hero } from './components/Hero'
@@ -28,6 +29,7 @@ import { EventDetail } from './pages/EventDetail'
 import { CommunityDetail } from './pages/CommunityDetail'
 import { PrivacyPage } from './pages/PrivacyPage'
 import { usePageMeta } from './hooks/usePageMeta'
+import { getAdminRouteSegment, isAdminUiEnabled } from './lib/adminRoute'
 
 function ScrollToTop() {
   const { pathname, hash } = useLocation()
@@ -126,7 +128,10 @@ function DonatePage() {
   )
 }
 
+const adminPathSegment = getAdminRouteSegment()
+
 function AppRoutes() {
+  const adminUiOn = isAdminUiEnabled()
   return (
     <>
       <ScrollToTop />
@@ -143,7 +148,10 @@ function AppRoutes() {
         <Route path="/events/:id" element={<EventDetail />} />
         <Route path="/donate" element={<DonatePage />} />
         <Route path="/privacy" element={<PrivacyPage />} />
-        <Route path="/admin" element={<Dashboard />} />
+        {adminUiOn ? (
+          <Route path={adminPathSegment} element={<Dashboard />} />
+        ) : null}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       <Footer />
     </>

@@ -8,6 +8,10 @@ Frontend (Vercel, Netlify, etc.)
    VITE_FIREBASE_* — same keys as .env.example at repo root
    VITE_API_URL — public HTTPS URL of your API, e.g. https://api.yourdomain.com
    (no trailing slash)
+   VITE_PUBLIC_ADMIN — set to "true" only if this deploy should expose the admin UI (default:
+   omitted = admin route not included in the production bundle’s router, so /admin is not public).
+   VITE_ADMIN_ROUTE — optional single path segment to replace the default "admin" URL with a
+   harder-to-guess segment (e.g. ops-7f3a9c2e).
 3. vercel.json provides SPA fallback for React Router.
 4. Netlify: public/_redirects is copied into dist/ so client-side routes work.
 
