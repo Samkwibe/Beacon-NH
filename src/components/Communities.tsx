@@ -29,6 +29,37 @@ export function Communities() {
           </p>
         </div>
 
+        <div className="community-landing-quick" aria-label="Quick actions">
+          <Link className="community-landing-quick-card" to="/">
+            <span className="community-landing-quick-emoji" aria-hidden>
+              🆘
+            </span>
+            <h3 className="community-landing-quick-title">Get help</h3>
+            <p className="community-landing-quick-desc">Housing, legal, food, crisis lines — free &amp; confidential.</p>
+          </Link>
+          <Link className="community-landing-quick-card" to="/services">
+            <span className="community-landing-quick-emoji" aria-hidden>
+              📋
+            </span>
+            <h3 className="community-landing-quick-title">Services</h3>
+            <p className="community-landing-quick-desc">Programs Beacon NH helps connect you with in NH.</p>
+          </Link>
+          <Link className="community-landing-quick-card" to="/events">
+            <span className="community-landing-quick-emoji" aria-hidden>
+              📅
+            </span>
+            <h3 className="community-landing-quick-title">Events</h3>
+            <p className="community-landing-quick-desc">Workshops, meals, clinics, and gatherings.</p>
+          </Link>
+          <Link className="community-landing-quick-card" to="/donate">
+            <span className="community-landing-quick-emoji" aria-hidden>
+              ❤️
+            </span>
+            <h3 className="community-landing-quick-title">Donate</h3>
+            <p className="community-landing-quick-desc">Keep these programs free for families.</p>
+          </Link>
+        </div>
+
         <div className="communities-grid">
           {COMMUNITIES.map((comm) => (
             <article key={comm.id} className="community-card">

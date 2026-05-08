@@ -22,7 +22,15 @@ export type CommunityMessage = {
 const MSGS = 60
 const DISPLAY_KEY = (cid: string) => `beacon_community_name_${cid}`
 
-export function CommunityChat({ communityId, communityLabel }: { communityId: string; communityLabel: string }) {
+export function CommunityChat({
+  communityId,
+  communityLabel,
+  conversationStarters = [],
+}: {
+  communityId: string
+  communityLabel: string
+  conversationStarters?: string[]
+}) {
   const [messages, setMessages] = useState<CommunityMessage[]>([])
   const [text, setText] = useState('')
   const [displayName, setDisplayName] = useState(() =>
@@ -150,6 +158,18 @@ export function CommunityChat({ communityId, communityLabel }: { communityId: st
           from Beacon NH, or use <strong>Get help</strong> and <strong>Email Beacon NH</strong> in the menu on
           the side so staff can connect you.
         </p>
+        {conversationStarters.length > 0 ? (
+          <div className="community-chat-starters">
+            <p className="community-chat-starters-label">Examples of helpful posts</p>
+            <ul className="community-chat-starters-list">
+              {conversationStarters.map((line) => (
+                <li key={line}>
+                  <span className="community-chat-starter-readonly">{line}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
       </div>
     )
   }
@@ -157,6 +177,20 @@ export function CommunityChat({ communityId, communityLabel }: { communityId: st
   return (
     <div className="community-panel community-chat">
       {error ? <div className="community-chat-error" role="alert">{error}</div> : null}
+      {conversationStarters.length > 0 ? (
+        <div className="community-chat-starters">
+          <p className="community-chat-starters-label">Tap to use as a starting line</p>
+          <ul className="community-chat-starters-list" aria-label="Suggestions for your post">
+            {conversationStarters.map((line) => (
+              <li key={line}>
+                <button type="button" className="community-chat-starter-btn" onClick={() => setText(line)}>
+                  {line}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
       <div className="community-chat-name-row">
         <label htmlFor={`chat-name-${communityId}`} className="community-chat-label">
           Your name (shown with your messages)

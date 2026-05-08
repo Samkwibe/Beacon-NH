@@ -86,6 +86,14 @@ export function CommunityDetail() {
           {tab === 'about' ? (
             <>
               <p className="community-detail-desc">{comm.fullDesc}</p>
+              <div className="community-highlights">
+                <h2 className="community-highlights-title">Tips for this community</h2>
+                <ul className="community-highlights-list">
+                  {comm.highlights.map((h, i) => (
+                    <li key={i}>{h}</li>
+                  ))}
+                </ul>
+              </div>
               <h2 className="community-detail-h2">Get involved</h2>
               <p className="community-detail-lead">
                 If you are part of this community and need assistance — or you want to volunteer —
@@ -132,7 +140,11 @@ export function CommunityDetail() {
           ) : null}
 
           {tab === 'chat' ? (
-            <CommunityChat communityId={comm.id} communityLabel={comm.name} />
+            <CommunityChat
+              communityId={comm.id}
+              communityLabel={comm.name}
+              conversationStarters={comm.conversationStarters}
+            />
           ) : null}
         </div>
 

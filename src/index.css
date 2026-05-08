@@ -900,18 +900,32 @@ footer { background: #1A3328; border-top: 1px solid rgba(255,255,255,.08); paddi
   background: #f4f8f5;
   color: #17402d;
 }
+.community-member-nav-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
 .community-member-nav {
   background: #f4f8f5;
   border: 1px solid var(--border);
   border-radius: 6px;
   padding: 20px 18px;
 }
-.community-member-nav-title {
+.community-member-nav--urgent {
+  background: #fffdfb;
+  border-color: rgba(180, 90, 60, 0.25);
+}
+.community-member-nav-section-title {
   font: 800 12px/1.2 'Barlow Condensed', sans-serif;
   text-transform: uppercase;
   letter-spacing: 0.1em;
   color: var(--cream);
-  margin: 0 0 14px;
+  margin: 0 0 8px;
+}
+.community-member-nav-hint {
+  font: 400 12px/1.45 'Barlow', sans-serif;
+  color: var(--muted);
+  margin: 0 0 12px;
 }
 .community-member-nav-list {
   list-style: none;
@@ -930,12 +944,130 @@ footer { background: #1A3328; border-top: 1px solid rgba(255,255,255,.08); paddi
   border-bottom: 1px solid rgba(46, 110, 74, 0.12);
   transition: color 0.15s, padding-left 0.15s;
 }
+.community-member-nav-link--urgent {
+  font-weight: 800;
+  color: #8b2c20;
+}
+.community-member-nav-link--urgent:hover {
+  color: #6a2218;
+}
 .community-member-nav li:last-child .community-member-nav-link {
   border-bottom: none;
 }
 .community-member-nav-link:hover {
   color: #1a3328;
   padding-left: 4px;
+}
+.community-highlights {
+  background: #f4f8f5;
+  border: 1px solid rgba(46, 110, 74, 0.2);
+  border-radius: 8px;
+  padding: 22px 24px 26px;
+  margin-bottom: 32px;
+}
+.community-highlights-title {
+  font: 900 18px/1.15 'Barlow Condensed', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--cream);
+  margin: 0 0 14px;
+}
+.community-highlights-list {
+  margin: 0;
+  padding: 0 0 0 1.15rem;
+  font: 400 15px/1.65 'Barlow', sans-serif;
+  color: #3d5a4a;
+}
+.community-highlights-list li {
+  margin-bottom: 10px;
+}
+.community-highlights-list li:last-child {
+  margin-bottom: 0;
+}
+.community-landing-quick {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px;
+  margin-top: 40px;
+  margin-bottom: 8px;
+}
+.community-landing-quick-card {
+  display: block;
+  background: #1e5038;
+  color: #fff;
+  text-decoration: none;
+  border-radius: 6px;
+  padding: 20px 18px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  transition: background 0.2s, transform 0.15s;
+}
+.community-landing-quick-card:hover {
+  background: #17402d;
+  transform: translateY(-1px);
+}
+.community-landing-quick-emoji {
+  font-size: 22px;
+  display: block;
+  margin-bottom: 8px;
+}
+.community-landing-quick-title {
+  font: 800 14px/1.2 'Barlow Condensed', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 0 0 6px;
+}
+.community-landing-quick-desc {
+  font: 400 13px/1.45 'Barlow', sans-serif;
+  color: rgba(255, 255, 255, 0.88);
+  margin: 0;
+}
+.community-chat-starters {
+  margin-bottom: 18px;
+  padding: 14px 16px;
+  background: #f8faf9;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+.community-chat-starters-label {
+  font: 700 11px/1.2 'Barlow', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  margin: 0 0 10px;
+}
+.community-chat-starters-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.community-chat-starter-btn {
+  width: 100%;
+  text-align: left;
+  font: 400 14px/1.45 'Barlow', sans-serif;
+  color: #2e6e4a;
+  background: #fff;
+  border: 1px solid rgba(46, 110, 74, 0.22);
+  border-radius: 4px;
+  padding: 10px 12px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.community-chat-starter-btn:hover {
+  border-color: #2e6e4a;
+  background: #f4f8f5;
+}
+.community-chat-starter-readonly {
+  display: block;
+  font: 400 14px/1.45 'Barlow', sans-serif;
+  color: #3d5a4a;
+  padding: 6px 0;
+  border-bottom: 1px dashed rgba(46, 110, 74, 0.2);
+}
+.community-chat-starters-list .community-chat-starter-readonly:last-of-type {
+  border-bottom: none;
 }
 @media (max-width: 900px) {
   .community-detail-shell {
@@ -947,7 +1079,7 @@ footer { background: #1A3328; border-top: 1px solid rgba(255,255,255,.08); paddi
     position: static;
     order: -1;
   }
-  .community-member-nav .community-member-nav-list {
+  .community-member-nav-stack .community-member-nav .community-member-nav-list {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
     gap: 0 12px;
