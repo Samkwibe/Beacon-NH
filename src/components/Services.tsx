@@ -11,7 +11,7 @@ export function Services() {
         <p className="s-sub">{t('services.sub')}</p>
       </div>
       <div className="svc-grid">
-        <a href="#help" className="svc-card" style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
+        <a href="#help-housing" className="svc-card" style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
           <div className="svc-img"><img src="/pexels-safari-consoler-3290243-11834954.jpg" alt="Housing" /></div>
           <div className="svc-overlay"></div>
           <div className="svc-body">
@@ -20,7 +20,7 @@ export function Services() {
             <p>{t('services.housingDesc')}</p>
           </div>
         </a>
-        <a href="#help" className="svc-card" style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
+        <a href="#help-legal" className="svc-card" style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
           <div className="svc-img"><img src="/pexels-dialophotography-10385918.jpg" alt="Legal" /></div>
           <div className="svc-overlay"></div>
           <div className="svc-body">
@@ -29,7 +29,7 @@ export function Services() {
             <p>{t('services.legalDesc')}</p>
           </div>
         </a>
-        <a href="#help" className="svc-card" style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
+        <a href="#help-education" className="svc-card" style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
           <div className="svc-img"><img src="/pexels-gwejeofafrica-15450149.jpg" alt="Education" /></div>
           <div className="svc-overlay"></div>
           <div className="svc-body">
@@ -38,7 +38,7 @@ export function Services() {
             <p>{t('services.eduDesc')}</p>
           </div>
         </a>
-        <a href="#help" className="svc-card" style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
+        <a href="/events" className="svc-card" style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
           <div className="svc-img"><img src="/pexels-hosny-salah-21693143-35934219.jpg" alt="Jobs" /></div>
           <div className="svc-overlay"></div>
           <div className="svc-body">
@@ -47,7 +47,7 @@ export function Services() {
             <p>{t('services.jobsDesc')}</p>
           </div>
         </a>
-        <a href="#help" className="svc-card" style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
+        <a href="tel:988" className="svc-card" style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
           <div className="svc-img"><img src="/pexels-osamanaser-20110833.jpg" alt="Health" /></div>
           <div className="svc-overlay"></div>
           <div className="svc-body">
@@ -56,7 +56,7 @@ export function Services() {
             <p>{t('services.healthDesc')}</p>
           </div>
         </a>
-        <a href="#help" className="svc-card" style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
+        <a href="#help-food" className="svc-card" style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
           <div className="svc-img"><img src="/pexels-lagosfoodbank-8054607.jpg" alt="Food" /></div>
           <div className="svc-overlay"></div>
           <div className="svc-body">

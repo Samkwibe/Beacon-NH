@@ -2,14 +2,15 @@ import { useState } from 'react';
 
 export function FloatingButtons() {
   const [modalOpen, setModalOpen] = useState(false);
+  const waDigits = (import.meta.env.VITE_WHATSAPP_E164 || '15555550100').replace(/\D/g, '');
 
   return (
     <>
-      <button className="sos-btn" onClick={() => setModalOpen(true)}>
+      <button type="button" className="sos-btn" onClick={() => setModalOpen(true)}>
         🆘 I Need Help Now
       </button>
 
-      <button className="wa-btn" onClick={() => window.open('https://wa.me/16031234567','_blank')}>
+      <button className="wa-btn" type="button" onClick={() => window.open(`https://wa.me/${waDigits}`, '_blank', 'noopener,noreferrer')}>
         💬 WhatsApp Us
       </button>
 
@@ -17,7 +18,7 @@ export function FloatingButtons() {
         if ((e.target as Element).id === 'sosModal') setModalOpen(false);
       }}>
         <div className="modal">
-          <button className="modal-close" onClick={() => setModalOpen(false)}>✕</button>
+          <button type="button" className="modal-close" onClick={() => setModalOpen(false)}>✕</button>
           <h2>We're here for you</h2>
           <p>Choose what you need right now. All services are free and confidential.</p>
           <div className="sos-items">
@@ -28,7 +29,7 @@ export function FloatingButtons() {
                 <p>Dial 211 — NH free helpline, 24/7, no cost</p>
               </div>
             </a>
-            <a href="tel:16036242010" className="sos-item">
+            <a href="tel:+16036242010" className="sos-item">
               <div className="sos-emoji">⚖️</div>
               <div>
                 <h4>Legal Emergency</h4>

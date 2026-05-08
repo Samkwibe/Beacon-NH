@@ -1,44 +1,167 @@
-import { useParams, Link } from 'react-router-dom';
-import { useData } from '../context/DataContext';
+import { useState } from 'react'
+import { useParams, Link } from 'react-router-dom'
+import { useData } from '../context/DataContext'
+import { calendarDayMonth, formatLongDate } from '../lib/dates'
+import { submitRsvp } from '../lib/rsvp'
+import { usePageMeta } from '../hooks/usePageMeta'
 
 export function EventDetail() {
-  const { id } = useParams();
-  const { events } = useData();
-  const event = events.find(e => e.id === id);
+  const { id } = useParams()
+  const { events } = useData()
+  const event = events.find((e) => e.id === id)
 
-  if (!event) return <div style={{ padding: '120px', textAlign: 'center', fontSize: '24px' }}>Event not found</div>;
+  const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
+  const [phone, setPhone] = useState('')
+  const [note, setNote] = useState('')
+  const [rsvpStatus, setRsvpStatus] = useState<'idle' | 'sending' | 'ok' | 'err'>('idle')
+  const [rsvpMsg, setRsvpMsg] = useState('')
+
+  usePageMeta(
+    event?.title ?? 'Event',
+    event?.desc ?? 'Beacon NH community event in Manchester, New Hampshire.',
+  )
+
+  if (!event) {
+    return (
+      <div className="page-shell page-shell--narrow">
+        <div className="page-empty">Event not found.</div>
+        <Link to="/events" className="event-detail-back">
+          ← Back to Events
+        </Link>
+      </div>
+    )
+  }
+
+  const { day, monthShort } = calendarDayMonth(event.date)
+
+  const handleRsvp = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!name.trim()) return
+    setRsvpStatus('sending')
+    setRsvpMsg('')
+    try {
+      await submitRsvp({
+        eventId: event.id,
+        eventTitle: event.title,
+        name: name.trim(),
+        email: email.trim(),
+        phone: phone.trim(),
+        note: note.trim(),
+      })
+      setRsvpStatus('ok')
+      setRsvpMsg('Thank you — we received your RSVP.')
+      setName('')
+      setEmail('')
+      setPhone('')
+      setNote('')
+    } catch {
+      setRsvpStatus('err')
+      setRsvpMsg('Something went wrong. Please try again or call us.')
+    }
+  }
 
   return (
-    <div style={{ paddingTop: '80px', minHeight: '100vh', background: '#FFFFFF', fontFamily: '"Barlow", sans-serif' }}>
+    <article className="event-detail page-with-nav">
       {event.img && (
-        <div style={{ width: '100%', height: '400px', overflow: 'hidden' }}>
-          <img src={event.img} alt={event.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        <div className="event-detail-hero">
+          <img src={event.img} alt={event.title} />
         </div>
       )}
-      <div style={{ maxWidth: '800px', margin: '0 auto', padding: '60px 20px' }}>
-        <Link to="/events" style={{ color: '#4A9669', textDecoration: 'none', fontWeight: 'bold', marginBottom: '24px', display: 'inline-block' }}>← Back to Events</Link>
-        <div style={{ display: 'flex', gap: '12px', marginBottom: '16px' }}>
-          <span style={{ background: 'rgba(46,110,74,.12)', color: '#2E6E4A', padding: '4px 12px', borderRadius: '4px', fontSize: '14px', fontWeight: 'bold' }}>{event.category}</span>
-          <span style={{ background: 'rgba(46,110,74,.08)', color: '#4A9669', padding: '4px 12px', borderRadius: '4px', fontSize: '14px', fontWeight: 'bold' }}>Free</span>
+      <div className="page-shell page-shell--narrow event-detail-body">
+        <Link to="/events" className="event-detail-back">
+          ← Back to Events
+        </Link>
+        <div className="event-detail-tags">
+          <span className="event-detail-tag">{event.category}</span>
+          <span className="event-detail-tag event-detail-tag--muted">Free</span>
         </div>
-        <h1 style={{ font: '700 48px "Barlow Condensed"', color: '#1A3328', marginBottom: '24px' }}>{event.title}</h1>
-        <div style={{ display: 'flex', gap: '40px', padding: '24px', background: '#F4F8F5', borderRadius: '8px', marginBottom: '40px' }}>
-          <div>
-            <div style={{ fontSize: '12px', textTransform: 'uppercase', color: '#888', fontWeight: 'bold', marginBottom: '4px' }}>Date</div>
-            <div style={{ fontSize: '18px', color: '#2E6E4A', fontWeight: 'bold' }}>{event.date}</div>
+        <h1 className="event-detail-title">{event.title}</h1>
+        <div className="event-detail-meta">
+          <div className="event-detail-meta-block">
+            <div className="event-detail-meta-label">When</div>
+            <div className="event-detail-meta-value">{formatLongDate(event.date)}</div>
+            <div className="event-detail-meta-cal">
+              <span className="event-detail-cal-day">{day}</span>
+              <span className="event-detail-cal-mo">{monthShort}</span>
+            </div>
           </div>
-          <div>
-            <div style={{ fontSize: '12px', textTransform: 'uppercase', color: '#888', fontWeight: 'bold', marginBottom: '4px' }}>Location</div>
-            <div style={{ fontSize: '18px', color: '#1A3328', fontWeight: 'bold' }}>{event.location}</div>
+          <div className="event-detail-meta-block">
+            <div className="event-detail-meta-label">Where</div>
+            <div className="event-detail-meta-value event-detail-meta-value--dark">{event.location}</div>
           </div>
         </div>
-        <p style={{ fontSize: '18px', color: '#5A8A6E', lineHeight: '1.6', marginBottom: '40px' }}>
-          {event.desc}
-        </p>
-        <button style={{ padding: '16px 32px', background: '#E6A11D', color: '#1A3328', fontWeight: 'bold', fontSize: '18px', border: 'none', borderRadius: '4px', cursor: 'pointer', fontFamily: '"Barlow", sans-serif' }}>
-          RSVP to this Event
-        </button>
+        <p className="event-detail-desc">{event.desc}</p>
+
+        <section className="event-rsvp" aria-labelledby="rsvp-heading">
+          <h2 id="rsvp-heading" className="event-rsvp-title">
+            RSVP
+          </h2>
+          <p className="event-rsvp-lead">
+            Let us know you are coming. You can also bring guests — tell us in the message box.
+          </p>
+          <form className="event-rsvp-form" onSubmit={handleRsvp}>
+            <label className="event-rsvp-label">
+              Name <span aria-hidden="true">*</span>
+              <input
+                className="event-rsvp-input"
+                required
+                autoComplete="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Your full name"
+              />
+            </label>
+            <label className="event-rsvp-label">
+              Email
+              <input
+                className="event-rsvp-input"
+                type="email"
+                autoComplete="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@example.com"
+              />
+            </label>
+            <label className="event-rsvp-label">
+              Phone
+              <input
+                className="event-rsvp-input"
+                type="tel"
+                autoComplete="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="(603) …"
+              />
+            </label>
+            <label className="event-rsvp-label">
+              Message
+              <textarea
+                className="event-rsvp-input event-rsvp-textarea"
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                rows={3}
+                placeholder="Number of guests, language needs, or questions"
+              />
+            </label>
+            <button
+              type="submit"
+              className="btn-primary event-rsvp-submit"
+              disabled={rsvpStatus === 'sending'}
+            >
+              {rsvpStatus === 'sending' ? 'Sending…' : 'Submit RSVP'}
+            </button>
+            {rsvpMsg && (
+              <p
+                className={`event-rsvp-feedback ${rsvpStatus === 'err' ? 'event-rsvp-feedback--err' : ''}`}
+                role="status"
+              >
+                {rsvpMsg}
+              </p>
+            )}
+          </form>
+        </section>
       </div>
-    </div>
-  );
+    </article>
+  )
 }

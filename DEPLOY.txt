@@ -1,0 +1,43 @@
+BeaconNH deployment checklist
+==============================
+
+Frontend (Vercel, Netlify, etc.)
+--------------------------------
+1. Build: npm install && npm run build (output: dist/).
+2. Set environment variables at build time (Vite reads VITE_* only while building):
+   VITE_FIREBASE_* — same keys as .env.example at repo root
+   VITE_API_URL — public HTTPS URL of your API, e.g. https://api.yourdomain.com
+   (no trailing slash)
+3. vercel.json provides SPA fallback for React Router.
+4. Netlify: public/_redirects is copied into dist/ so client-side routes work.
+
+Backend API (Node server/)
+---------------------------
+Required env vars:
+  MYSQL_HOST, MYSQL_PORT, MYSQL_USER, MYSQL_PASSWORD, MYSQL_DATABASE
+  CORS_ORIGIN — exact origin of your deployed SPA (e.g. https://your-app.vercel.app)
+    Omit or use carefully in production; reflect-origin mode is convenient for local dev only.
+  Firebase Admin (pick one):
+    GOOGLE_APPLICATION_CREDENTIALS — path to service account JSON inside the container/host
+    FIREBASE_SERVICE_ACCOUNT_JSON — full JSON string of the service account (many hosts prefer this)
+
+Local stack: MySQL + API in Docker
+-----------------------------------
+1. Place Firebase service account JSON at server/firebase-admin.json (never commit it).
+2. docker compose up -d mysql   — database only (API via npm run api:dev on host)
+   OR
+   npm run docker:stack          — mysql + API container (profile "api")
+3. Edit docker-compose.yml api.service.environment.CORS_ORIGIN for your frontend URL.
+4. With Docker API on host port 3002: set VITE_API_URL=http://localhost:3002 in root .env for Vite.
+   Health check: GET http://localhost:3002/api/health
+   Host-only API (npm run api:dev): http://localhost:3001/api/health
+
+Production MySQL
+----------------
+Use a managed database (RDS, PlanetScale, etc.). Point MYSQL_* at that instance.
+Run migrations/schema from server/schema.sql once on the empty database.
+
+Secrets
+-------
+Do not commit root .env, server/.env, or firebase-admin.json.
+Rotate Firebase web API key if .env was ever pushed to a public repo.

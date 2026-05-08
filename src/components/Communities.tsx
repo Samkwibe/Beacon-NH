@@ -1,4 +1,12 @@
+import { Link } from 'react-router-dom'
+import { usePageMeta } from '../hooks/usePageMeta'
+
 export function Communities() {
+  usePageMeta(
+    'Communities',
+    'Explore Manchester NH refugee-led communities — Congo, Kenya, Syria, Afghanistan, Ukraine, Somalia, and more.',
+  )
+
   const communities = [
     {
       id: "congolese",
@@ -45,6 +53,7 @@ export function Communities() {
   ];
 
   return (
+    <div className="page-with-nav">
     <section className="communities" id="communities" style={{ background: '#FFFFFF', padding: '80px 60px' }}>
       <div className="section-header">
         <div className="s-eyebrow"><div className="s-line"></div><span className="s-eye">Our Networks</span></div>
@@ -61,7 +70,7 @@ export function Communities() {
             <div style={{ padding: '24px' }}>
               <span className="story-country-tag" style={{ marginBottom: '12px', background: '#4A9669' }}>{comm.flag} {comm.name.split(' ')[0]}</span>
               <h3 style={{ font: '700 20px/1.2 "Barlow Condensed", sans-serif', textTransform: 'uppercase', letterSpacing: '.03em', color: '#1A3328', marginBottom: '8px' }}>
-                <a href={`/communities/${comm.id}`} style={{ color: 'inherit', textDecoration: 'none' }}>{comm.name}</a>
+                <Link to={`/communities/${comm.id}`} style={{ color: 'inherit', textDecoration: 'none' }}>{comm.name}</Link>
               </h3>
               <p style={{ font: '400 14px/1.6 "Barlow", sans-serif', color: '#5A8A6E' }}>
                 {comm.desc}
@@ -71,5 +80,6 @@ export function Communities() {
         ))}
       </div>
     </section>
-  );
+    </div>
+  )
 }

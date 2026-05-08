@@ -1,55 +1,266 @@
-import React, { createContext, useState, useEffect, useContext } from 'react';
+import React, {
+  createContext,
+  useState,
+  useEffect,
+  useContext,
+  useMemo,
+  useCallback,
+} from 'react'
+import {
+  collection,
+  onSnapshot,
+  query,
+  orderBy,
+  addDoc,
+  deleteDoc,
+  doc,
+  serverTimestamp,
+  writeBatch,
+} from 'firebase/firestore'
+import { getDb } from '../firebase'
+import { DEFAULT_EVENTS, type Event } from '../data/eventsCatalog'
+import {
+  usesBeaconApi,
+  apiListEvents,
+  apiCreateEvent,
+  apiDeleteEvent,
+  apiSeedDemo,
+} from '../lib/beaconApi'
 
-export type Event = {
-  id: string;
-  title: string;
-  desc: string;
-  date: string;
-  location: string;
-  category: string;
-  img: string;
-  isFeatured?: boolean;
-};
+/* eslint-disable react-refresh/only-export-components -- context provider + hook pattern */
+
+function docToEvent(id: string, data: Record<string, unknown>): Event {
+  return {
+    id,
+    title: String(data.title ?? ''),
+    desc: String(data.desc ?? ''),
+    date: String(data.date ?? ''),
+    location: String(data.location ?? 'TBD'),
+    category: String(data.category ?? 'Community'),
+    img: String(data.img ?? ''),
+    isFeatured: Boolean(data.isFeatured),
+  }
+}
+
+function sortByDateAsc(list: Event[]): Event[] {
+  return [...list].sort((a, b) => a.date.localeCompare(b.date))
+}
+
+function eventPayload(ev: Event) {
+  return {
+    title: ev.title,
+    desc: ev.desc,
+    date: ev.date,
+    location: ev.location,
+    category: ev.category,
+    img: ev.img || '',
+    isFeatured: Boolean(ev.isFeatured),
+  }
+}
 
 type DataContextType = {
-  events: Event[];
-  addEvent: (e: Event) => void;
-  deleteEvent: (id: string) => void;
-};
+  events: Event[]
+  loading: boolean
+  error: string | null
+  /** Firestore sync (disabled when MySQL API is active) */
+  usesFirestore: boolean
+  /** REST API + MySQL backend */
+  usesMysqlApi: boolean
+  /** Admin should use Firebase Auth when Firestore or MySQL API is active */
+  authUsesFirebase: boolean
+  addEvent: (
+    input: Omit<Event, 'id'> & { id?: string },
+    idToken?: string | null,
+  ) => Promise<void>
+  deleteEvent: (id: string, idToken?: string | null) => Promise<void>
+  seedDemoEvents: (idToken?: string | null) => Promise<void>
+}
 
-const DataContext = createContext<DataContextType | undefined>(undefined);
+const DataContext = createContext<DataContextType | undefined>(undefined)
 
 export function DataProvider({ children }: { children: React.ReactNode }) {
+  const usesMysqlApi = usesBeaconApi()
+  const db = useMemo(() => (usesMysqlApi ? undefined : getDb()), [usesMysqlApi])
+  const usesFirestore = Boolean(db)
+  const authUsesFirebase = usesFirestore || usesMysqlApi
+
   const [events, setEvents] = useState<Event[]>(() => {
-    const saved = localStorage.getItem('beacon_events');
-    if (saved) return JSON.parse(saved);
-    return [
-      { id: '1', title: 'Monthly Community Meal & Celebration', desc: 'Celebrating cultures from across the world. Bring a dish to share. All ages, all languages, everyone welcome.', date: '2026-06-21', location: 'Granite YMCA, 30 Mechanic St, Manchester NH', category: 'Community', img: '/pexels-zeusdcreator-17706258.jpg', isFeatured: true },
-      { id: '2', title: 'ESOL English Class — Beginners', desc: 'Free English for adults. Childcare available. West Side Manchester NH.', date: '2026-06-14', location: 'West Side Manchester NH', category: 'Education', img: '' },
-      { id: '3', title: 'Free Legal Drop-In Clinic', desc: '30-min sessions with NH immigration attorneys. Arabic & Somali interpreters.', date: '2026-06-17', location: 'Manchester, NH', category: 'Legal', img: '' },
-      { id: '4', title: 'Wellbeing Group for Adults', desc: 'Safe, culturally-sensitive mental health group. Manchester City Library.', date: '2026-06-26', location: 'Manchester City Library', category: 'Wellbeing', img: '' },
-      { id: '5', title: 'US Citizenship Prep Workshop', desc: 'Study materials provided in multiple languages. All welcome.', date: '2026-07-05', location: 'Manchester, NH', category: 'Civic', img: '' }
-    ];
-  });
+    if (usesMysqlApi || usesFirestore) return []
+    const saved = localStorage.getItem('beacon_events')
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved) as Event[]
+        return Array.isArray(parsed) && parsed.length ? sortByDateAsc(parsed) : DEFAULT_EVENTS
+      } catch {
+        return DEFAULT_EVENTS
+      }
+    }
+    return DEFAULT_EVENTS
+  })
+
+  const [loading, setLoading] = useState(usesMysqlApi || usesFirestore)
+  const [error, setError] = useState<string | null>(null)
+
+  const refreshMysqlEvents = useCallback(async () => {
+    const list = await apiListEvents()
+    setEvents(sortByDateAsc(list))
+  }, [])
+
+  /* Bootstrap MySQL list: setState runs only after await (microtask), not synchronously in effect body. */
+  /* eslint-disable react-hooks/set-state-in-effect */
+  useEffect(() => {
+    if (!usesMysqlApi) return
+    let cancelled = false
+    refreshMysqlEvents()
+      .then(() => {
+        if (!cancelled) {
+          setError(null)
+          setLoading(false)
+        }
+      })
+      .catch((err: unknown) => {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : 'Failed to load events')
+          setLoading(false)
+        }
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [usesMysqlApi, refreshMysqlEvents])
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   useEffect(() => {
-    localStorage.setItem('beacon_events', JSON.stringify(events));
-  }, [events]);
+    if (!db) return
+    const q = query(collection(db, 'events'), orderBy('date', 'asc'))
+    const unsub = onSnapshot(
+      q,
+      (snap) => {
+        const list = snap.docs.map((d) => docToEvent(d.id, d.data()))
+        setEvents(list)
+        setLoading(false)
+        setError(null)
+      },
+      (err) => {
+        setError(err.message)
+        setLoading(false)
+      },
+    )
+    return () => unsub()
+  }, [db])
 
-  const addEvent = (e: Event) => setEvents([...events, e]);
-  const deleteEvent = (id: string) => setEvents(events.filter(ev => ev.id !== id));
+  useEffect(() => {
+    if (usesMysqlApi || usesFirestore) return
+    localStorage.setItem('beacon_events', JSON.stringify(events))
+  }, [events, usesMysqlApi, usesFirestore])
+
+  const addEvent = async (
+    input: Omit<Event, 'id'> & { id?: string },
+    idToken?: string | null,
+  ) => {
+    if (usesMysqlApi) {
+      if (!idToken) throw new Error('Sign in required to publish events.')
+      await apiCreateEvent(
+        {
+          title: input.title,
+          desc: input.desc,
+          date: input.date,
+          location: input.location,
+          category: input.category,
+          img: input.img || '',
+          isFeatured: input.isFeatured,
+        },
+        idToken,
+      )
+      await refreshMysqlEvents()
+      return
+    }
+    if (db) {
+      await addDoc(collection(db, 'events'), {
+        title: input.title,
+        desc: input.desc,
+        date: input.date,
+        location: input.location,
+        category: input.category,
+        img: input.img || '',
+        isFeatured: Boolean(input.isFeatured),
+        createdAt: serverTimestamp(),
+      })
+    } else {
+      const id = input.id ?? `${Date.now()}`
+      const next: Event = {
+        id,
+        title: input.title,
+        desc: input.desc,
+        date: input.date,
+        location: input.location,
+        category: input.category,
+        img: input.img || '',
+        isFeatured: input.isFeatured,
+      }
+      setEvents((prev) => sortByDateAsc([...prev, next]))
+    }
+  }
+
+  const deleteEvent = async (id: string, idToken?: string | null) => {
+    if (usesMysqlApi) {
+      if (!idToken) throw new Error('Sign in required.')
+      await apiDeleteEvent(id, idToken)
+      await refreshMysqlEvents()
+      return
+    }
+    if (db) {
+      await deleteDoc(doc(db, 'events', id))
+    } else {
+      setEvents((prev) => prev.filter((e) => e.id !== id))
+    }
+  }
+
+  const seedDemoEvents = async (idToken?: string | null) => {
+    if (usesMysqlApi) {
+      if (!idToken) throw new Error('Sign in required.')
+      await apiSeedDemo(idToken)
+      await refreshMysqlEvents()
+      return
+    }
+    if (!db) {
+      setEvents(sortByDateAsc([...DEFAULT_EVENTS]))
+      return
+    }
+    const batch = writeBatch(db)
+    for (const ev of DEFAULT_EVENTS) {
+      const ref = doc(collection(db, 'events'))
+      batch.set(ref, {
+        ...eventPayload(ev),
+        createdAt: serverTimestamp(),
+      })
+    }
+    await batch.commit()
+  }
 
   return (
-    <DataContext.Provider value={{ events, addEvent, deleteEvent }}>
+    <DataContext.Provider
+      value={{
+        events,
+        loading,
+        error,
+        usesFirestore,
+        usesMysqlApi,
+        authUsesFirebase,
+        addEvent,
+        deleteEvent,
+        seedDemoEvents,
+      }}
+    >
       {children}
     </DataContext.Provider>
-  );
+  )
 }
 
 export function useData() {
-  const context = useContext(DataContext);
+  const context = useContext(DataContext)
   if (context === undefined) {
-    throw new Error('useData must be used within a DataProvider');
+    throw new Error('useData must be used within a DataProvider')
   }
-  return context;
+  return context
 }

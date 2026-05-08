@@ -1,0 +1,53 @@
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: beaconnh-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: beacon_root_local
+      MYSQL_DATABASE: beaconnh
+      MYSQL_USER: beacon
+      MYSQL_PASSWORD: beacon_local_pass
+    ports:
+      - '3306:3306'
+    volumes:
+      - beaconnh_mysql_data:/var/lib/mysql
+      - ./server/schema.sql:/docker-entrypoint-initdb.d/001-schema.sql:ro
+    healthcheck:
+      test: ['CMD', 'mysqladmin', 'ping', '-h', '127.0.0.1', '-uroot', '-pbeacon_root_local']
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 15s
+
+  api:
+    profiles:
+      - api
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: beaconnh-api
+    restart: unless-stopped
+    # Host 3002 → container 3001 so `npm run api:dev` can still use localhost:3001.
+    ports:
+      - '3002:3001'
+    environment:
+      PORT: '3001'
+      MYSQL_HOST: mysql
+      MYSQL_PORT: '3306'
+      MYSQL_USER: beacon
+      MYSQL_PASSWORD: beacon_local_pass
+      MYSQL_DATABASE: beaconnh
+      # Match your Vite dev URL or production site origin (comma-separated not supported — single origin).
+      CORS_ORIGIN: http://localhost:5173
+      NODE_ENV: production
+      GOOGLE_APPLICATION_CREDENTIALS: /secrets/firebase-admin.json
+    volumes:
+      # Omit this volume if you set FIREBASE_SERVICE_ACCOUNT_JSON instead (see DEPLOY.txt).
+      - ./server/firebase-admin.json:/secrets/firebase-admin.json:ro
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+volumes:
+  beaconnh_mysql_data:

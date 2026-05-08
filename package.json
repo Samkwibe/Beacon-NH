@@ -7,9 +7,18 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "api:dev": "npm run dev --prefix server",
+    "api:install": "npm install --prefix server",
+    "db:up": "docker compose up -d mysql",
+    "db:down": "docker compose down",
+    "db:logs": "docker compose logs -f mysql",
+    "docker:stack": "docker compose --profile api up -d --build",
+    "docker:stack:logs": "docker compose --profile api logs -f api",
+    "docker:stack:down": "docker compose --profile api down"
   },
   "dependencies": {
+    "firebase": "^12.13.0",
     "i18next": "^26.0.10",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
