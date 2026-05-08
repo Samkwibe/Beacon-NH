@@ -19,8 +19,9 @@ Backend API (Node server/)
 ---------------------------
 Required env vars:
   MYSQL_HOST, MYSQL_PORT, MYSQL_USER, MYSQL_PASSWORD, MYSQL_DATABASE
-  CORS_ORIGIN — exact origin of your deployed SPA (e.g. https://your-app.vercel.app)
-    Omit or use carefully in production; reflect-origin mode is convenient for local dev only.
+  CORS_ORIGIN — origin(s) of your deployed SPA. One origin, or comma-separated, e.g.
+    https://beacon-nh.vercel.app,https://www.yourdomain.org
+    Omit or use carefully in production; reflect-origin (true) is convenient for local dev only.
   Firebase Admin (pick one):
     GOOGLE_APPLICATION_CREDENTIALS — path to service account JSON inside the container/host
     FIREBASE_SERVICE_ACCOUNT_JSON — full JSON string of the service account (many hosts prefer this)
@@ -40,6 +41,46 @@ Production MySQL
 ----------------
 Use a managed database (RDS, PlanetScale, etc.). Point MYSQL_* at that instance.
 Run migrations/schema from server/schema.sql once on the empty database.
+If the provider requires TLS, set MYSQL_SSL=true on the API (see server/.env.example).
+
+Full stack (example: Vercel site + hosted API + managed MySQL)
+---------------------------------------------------------------
+Goal: visitors load the SPA from Vercel; events and RSVPs go through your Node API and MySQL.
+
+A) Database
+   1. Create a MySQL 8 database (AWS RDS, PlanetScale, Aiven, DigitalOcean Managed DB, etc.).
+   2. Run server/schema.sql once in a SQL console against the empty database.
+   3. Note host, port, user, password, database name.
+
+B) API (Node service — not Vercel static hosting)
+   Deploy the server/ folder as a long-running web service (Dockerfile provided). Typical hosts:
+   Railway, Render, Fly.io, Google Cloud Run, or any VPS with Node 22+.
+   Required service env vars:
+     PORT — set by the host if provided (otherwise 3001).
+     MYSQL_HOST, MYSQL_PORT, MYSQL_USER, MYSQL_PASSWORD, MYSQL_DATABASE
+     CORS_ORIGIN — your live site origin(s), comma-separated, e.g.
+       https://beacon-nh.vercel.app,https://your-custom-domain.com
+       (no trailing slashes; must match the browser’s exact origin.)
+     FIREBASE_SERVICE_ACCOUNT_JSON — paste the full Firebase service account JSON as a single line,
+       OR use GOOGLE_APPLICATION_CREDENTIALS with a mounted file path inside the container.
+   Health check: GET https://YOUR-API-HOST/api/health — expect mysql: true and firebaseAdmin: true.
+
+C) Frontend (Vercel)
+   In the Vercel project → Settings → Environment Variables (Production):
+     VITE_API_URL=https://YOUR-API-HOST   (no trailing slash)
+     VITE_FIREBASE_* — same Firebase web app as local .env.example
+     VITE_PUBLIC_ADMIN=true — only if this deployment should include the admin UI route
+   Redeploy after saving env vars so Vite embeds VITE_* into the build.
+
+D) Firebase Auth (admin + API writes)
+   - Enable Email/Password (or your chosen provider) in Firebase Console → Authentication.
+   - Create at least one admin user for the /admin dashboard.
+   - The API verifies Bearer tokens with Firebase Admin; without FIREBASE_SERVICE_ACCOUNT_JSON the
+     admin and write endpoints return 503/401.
+
+E) Smoke test
+   - Open the production site → Events should load from GET /api/events.
+   - Submit a test RSVP → row appears in MySQL; list RSVPs in admin after signing in.
 
 Secrets
 -------

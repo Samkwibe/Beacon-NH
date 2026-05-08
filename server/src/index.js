@@ -60,6 +60,23 @@ async function verifyBearer(req, res, next) {
   }
 }
 
+function parseCorsOrigin() {
+  const raw = process.env.CORS_ORIGIN
+  if (raw == null || raw === '') return true
+  if (raw === 'false') return false
+  if (raw === 'true') return true
+  const list = raw
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean)
+  if (list.length === 0) return true
+  if (list.length === 1) return list[0]
+  return list
+}
+
+const useMysqlSsl =
+  process.env.MYSQL_SSL === '1' || process.env.MYSQL_SSL === 'true'
+
 const pool = mysql.createPool({
   host: process.env.MYSQL_HOST ?? '127.0.0.1',
   port: Number(process.env.MYSQL_PORT ?? 3306),
@@ -68,6 +85,15 @@ const pool = mysql.createPool({
   database: process.env.MYSQL_DATABASE ?? 'beaconnh',
   waitForConnections: true,
   connectionLimit: 10,
+  ...(useMysqlSsl
+    ? {
+        ssl: {
+          rejectUnauthorized:
+            process.env.MYSQL_SSL_REJECT_UNAUTHORIZED !== '0' &&
+            process.env.MYSQL_SSL_REJECT_UNAUTHORIZED !== 'false',
+        },
+      }
+    : {}),
 })
 
 function rowToEvent(row) {
@@ -89,10 +115,9 @@ function rowToEvent(row) {
 }
 
 const app = express()
-const corsOrigin = process.env.CORS_ORIGIN ?? true
 app.use(
   cors({
-    origin: corsOrigin === 'true' ? true : corsOrigin,
+    origin: parseCorsOrigin(),
     credentials: true,
   }),
 )
