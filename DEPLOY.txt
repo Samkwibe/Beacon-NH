@@ -19,6 +19,8 @@ Backend API (Node server/)
 ---------------------------
 Required env vars:
   MYSQL_HOST, MYSQL_PORT, MYSQL_USER, MYSQL_PASSWORD, MYSQL_DATABASE
+    Railway’s MySQL template exposes MYSQLHOST, MYSQLPORT, MYSQLUSER, MYSQLPASSWORD, MYSQLDATABASE;
+    this API accepts either naming style.
   CORS_ORIGIN — origin(s) of your deployed SPA. One origin, or comma-separated, e.g.
     https://beacon-nh.vercel.app,https://www.yourdomain.org
     Omit or use carefully in production; reflect-origin (true) is convenient for local dev only.
@@ -37,6 +39,60 @@ Local stack: MySQL + API in Docker
    Health check: GET http://localhost:3002/api/health
    Host-only API (npm run api:dev): http://localhost:3001/api/health
 
+Railway (API + MySQL on Railway)
+--------------------------------
+Repo: https://github.com/YOU/BeaconNH (or your fork). You need one Railway **project** with two
+services: **MySQL** and the **Beacon API**.
+
+1) Create project
+   - railway.app → New Project → Deploy from GitHub → select this repository.
+
+2) Add MySQL
+   - Project canvas → + New → Database → MySQL (or deploy from
+     https://railway.com/template/mysql ).
+   - Wait until MySQL is running. No schema yet.
+
+3) Add the API service
+   - + New → GitHub Repo → same repository again (or “Empty service” → connect repo).
+   - Service → Settings → **Root Directory** → set to: server
+     (so Railway builds from server/Dockerfile and picks up server/railway.toml).
+   - Service → Settings → **Networking** → Generate Domain (public HTTPS URL). This is your API base
+     (e.g. https://beacon-api-production.up.railway.app). No trailing slash.
+
+4) Wire MySQL into the API
+   - Open the **API** service → **Variables**.
+   - Add **Variable Reference** (or “Reference”) from the **MySQL** service and include at least:
+     MYSQLHOST, MYSQLPORT, MYSQLUSER, MYSQLPASSWORD, MYSQLDATABASE
+     (Railway docs: https://docs.railway.com/databases/mysql — connect via references.)
+   - The Node app reads MYSQLHOST / MYSQLUSER / … automatically.
+
+5) API-only variables (same service → Variables)
+   - CORS_ORIGIN — your Vercel origins, comma-separated if needed, e.g.
+     https://beacon-nh.vercel.app
+   - FIREBASE_SERVICE_ACCOUNT_JSON — paste the **entire** Firebase service account JSON (one line).
+     Same Firebase **project** as VITE_FIREBASE_* on Vercel. Get it from Firebase Console → Project
+     settings → Service accounts → Generate new private key.
+   - Optional: MYSQL_SSL=true if connections fail (some network paths need TLS; try without first).
+
+6) Initialize the database
+   - Run server/schema.sql once against the MySQL database. Options:
+     - Railway MySQL → **Data** / **Query** tab if available, paste the SQL; or
+     - Local: install mysql client, use Railway MySQL **Connect** / public TCP proxy URL and credentials
+       from the MySQL service variables; run: mysql -h HOST -P PORT -u USER -p < server/schema.sql
+
+7) Deploy / verify
+   - Trigger deploy on the API service. Logs should show the API listening.
+   - Open GET https://YOUR-API-DOMAIN/api/health — expect JSON with "mysql": true and
+     "firebaseAdmin": true.
+
+8) Point Vercel at Railway
+   - Vercel → Environment Variables → Production:
+     VITE_API_URL=https://YOUR-API-DOMAIN   (no trailing slash)
+     VITE_FIREBASE_* — match your Firebase web app
+   - Redeploy Vercel so the build picks up VITE_API_URL.
+
+Pricing note: Railway bills for MySQL + API runtime and egress; see railway.app/pricing.
+
 Production MySQL
 ----------------
 Use a managed database (RDS, PlanetScale, etc.). Point MYSQL_* at that instance.
@@ -54,7 +110,7 @@ A) Database
 
 B) API (Node service — not Vercel static hosting)
    Deploy the server/ folder as a long-running web service (Dockerfile provided). Typical hosts:
-   Railway, Render, Fly.io, Google Cloud Run, or any VPS with Node 22+.
+   **Railway** (step-by-step above), Render, Fly.io, Google Cloud Run, or any VPS with Node 22+.
    Required service env vars:
      PORT — set by the host if provided (otherwise 3001).
      MYSQL_HOST, MYSQL_PORT, MYSQL_USER, MYSQL_PASSWORD, MYSQL_DATABASE

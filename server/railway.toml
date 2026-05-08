@@ -1,0 +1,10 @@
+# Beacon NH API — deploy with Railway Root Directory set to server (this folder).
+# See DEPLOY.txt → "Railway" for MySQL + env vars + Vercel.
+
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+healthcheckPath = "/api/health"
+healthcheckTimeout = 300

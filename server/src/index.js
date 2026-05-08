@@ -77,12 +77,25 @@ function parseCorsOrigin() {
 const useMysqlSsl =
   process.env.MYSQL_SSL === '1' || process.env.MYSQL_SSL === 'true'
 
+/** Railway MySQL uses MYSQLHOST / MYSQLUSER / …; local Docker uses MYSQL_HOST / MYSQL_USER / … */
 const pool = mysql.createPool({
-  host: process.env.MYSQL_HOST ?? '127.0.0.1',
-  port: Number(process.env.MYSQL_PORT ?? 3306),
-  user: process.env.MYSQL_USER ?? 'root',
-  password: process.env.MYSQL_PASSWORD ?? '',
-  database: process.env.MYSQL_DATABASE ?? 'beaconnh',
+  host:
+    process.env.MYSQL_HOST ??
+    process.env.MYSQLHOST ??
+    '127.0.0.1',
+  port: Number(
+    process.env.MYSQL_PORT ?? process.env.MYSQLPORT ?? 3306,
+  ),
+  user:
+    process.env.MYSQL_USER ?? process.env.MYSQLUSER ?? 'root',
+  password:
+    process.env.MYSQL_PASSWORD ??
+    process.env.MYSQLPASSWORD ??
+    '',
+  database:
+    process.env.MYSQL_DATABASE ??
+    process.env.MYSQLDATABASE ??
+    'beaconnh',
   waitForConnections: true,
   connectionLimit: 10,
   ...(useMysqlSsl
