@@ -54,8 +54,15 @@ services: **MySQL** and the **Beacon API**.
 
 3) Add the API service
    - + New → GitHub Repo → same repository again (or “Empty service” → connect repo).
-   - Service → Settings → **Root Directory** → set to: server
-     (so Railway builds from server/Dockerfile and picks up server/railway.toml).
+   - **Pick one build setup** (if you skip both, Railway uses Railpack on the repo root and `npm ci`
+     often fails or installs the wrong app):
+     - **A (recommended):** Service → Settings → **Root Directory** → `server`  
+       (Railway uses `server/Dockerfile` and `server/railway.toml`.)
+     - **B:** Leave **Root Directory** empty (repo root). Service → **Variables** → add  
+       **`RAILWAY_DOCKERFILE_PATH`** = **`Dockerfile.api`**  
+       (builds the API from the `Dockerfile.api` at the repository root — no need to set Root Directory.)
+   - Your GitHub branch must include **`server/package-lock.json`**. Push latest `main` if the deploy
+     shows an old commit (e.g. only “docs: README”) without the full `server/` tree.
    - Service → Settings → **Networking** → Generate Domain (public HTTPS URL). This is your API base
      (e.g. https://beacon-api-production.up.railway.app). No trailing slash.
 

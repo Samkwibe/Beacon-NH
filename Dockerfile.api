@@ -1,0 +1,17 @@
+# Beacon NH API — build context must be the repository root.
+# Use on Railway when the service Root Directory is “/” (repo root): set
+# Service → Variables → RAILWAY_DOCKERFILE_PATH = Dockerfile.api
+# (mirrors server/Dockerfile; keep COPY lines in sync when dependencies change.)
+
+FROM node:22-alpine
+WORKDIR /app
+
+COPY server/package.json server/package-lock.json ./
+RUN npm ci --omit=dev
+
+COPY server/schema.sql server/default-events.json ./
+COPY server/src ./src
+
+ENV NODE_ENV=production
+EXPOSE 3001
+CMD ["node", "src/index.js"]
