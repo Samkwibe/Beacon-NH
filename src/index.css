@@ -1476,3 +1476,23 @@ footer { background: #1A3328; border-top: 1px solid rgba(255,255,255,.08); paddi
   margin-top: 16px;
   margin-bottom: 0;
 }
+.community-setup-details {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  font-size: 14px;
+}
+.community-setup-summary {
+  cursor: pointer;
+  font-weight: 700;
+  color: #2e6e4a;
+}
+.community-setup-list {
+  margin: 12px 0 0;
+  padding-left: 1.25rem;
+  color: #4a6b58;
+  line-height: 1.55;
+}
+.community-setup-list li {
+  margin-bottom: 10px;
+}

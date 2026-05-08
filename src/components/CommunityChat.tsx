@@ -128,13 +128,35 @@ export function CommunityChat({ communityId, communityLabel }: { communityId: st
     return (
       <div className="community-panel community-panel--muted">
         <p>
-          <strong>Live discussion</strong> needs Firebase (same project as the site). Add{' '}
-          <code className="community-code">VITE_FIREBASE_*</code> to your environment, deploy Firestore rules,
-          and enable <strong>Anonymous</strong> authentication in Firebase Console.
+          <strong>Community board</strong> — here you will be able to post short updates, questions, and
+          meet-up ideas for {communityLabel}. The box below appears when Beacon NH finishes connecting this
+          page to our live message service (one setup step on the hosting side).
         </p>
         <p className="community-panel-note">
-          Until then, use the updates above and contact Beacon NH for introductions to {communityLabel}.
+          Right now: use the <strong>What&apos;s happening</strong> tab for news, or reach Beacon NH through
+          Get help / Contact — staff can pass messages along to community leaders.
         </p>
+        <details className="community-setup-details">
+          <summary className="community-setup-summary">For Beacon NH: turn on the discussion board</summary>
+          <ol className="community-setup-list">
+            <li>
+              In <strong>Vercel</strong> → your project → <strong>Settings</strong> →{' '}
+              <strong>Environment Variables</strong> → <strong>Production</strong>, add every variable from
+              your local <code className="community-code">.env.example</code> that starts with{' '}
+              <code className="community-code">VITE_FIREBASE_</code> (all six), using the same values as in
+              Firebase → Project settings → Your web app.
+            </li>
+            <li>
+              <strong>Redeploy</strong> the latest production deployment so those values are included in the
+              build (Vite bakes them in at build time).
+            </li>
+            <li>
+              In Firebase: <strong>Firestore rules</strong> published (see repo <code className="community-code">firestore.rules</code>),
+              index for <code className="community-code">community_messages</code>, and{' '}
+              <strong>Authentication → Anonymous</strong> enabled.
+            </li>
+          </ol>
+        </details>
       </div>
     )
   }
