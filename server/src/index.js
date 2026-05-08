@@ -137,20 +137,27 @@ app.use(
 app.use(express.json({ limit: '512kb' }))
 
 app.get('/api/health', async (_req, res) => {
+  let mysqlOk = false
+  let mysqlError = null
   try {
     await pool.query('SELECT 1')
-    res.json({
-      ok: true,
-      mysql: true,
-      firebaseAdmin: firebaseReady,
-    })
+    mysqlOk = true
   } catch (e) {
-    res.status(503).json({
-      ok: false,
-      mysql: false,
-      error: e instanceof Error ? e.message : 'MySQL error',
-    })
+    mysqlError = e instanceof Error ? e.message : 'MySQL error'
   }
+  const payload = {
+    ok: mysqlOk,
+    mysql: mysqlOk,
+    firebaseAdmin: firebaseReady,
+    ...(mysqlError ? { error: mysqlError } : {}),
+  }
+  const strict =
+    process.env.HEALTHCHECK_REQUIRE_MYSQL === '1' ||
+    process.env.HEALTHCHECK_REQUIRE_MYSQL === 'true'
+  if (strict && !mysqlOk) {
+    return res.status(503).json(payload)
+  }
+  res.status(200).json(payload)
 })
 
 app.get('/api/events', async (_req, res) => {
@@ -282,7 +289,8 @@ app.get('/api/rsvps', verifyBearer, async (_req, res) => {
 })
 
 const port = Number(process.env.PORT ?? 3001)
-app.listen(port, () => {
-  console.log(`Beacon NH API http://localhost:${port}`)
+const host = process.env.HOST ?? '0.0.0.0'
+app.listen(port, host, () => {
+  console.log(`Beacon NH API listening on ${host}:${port}`)
   console.log(`Firebase Admin: ${firebaseReady ? 'ready' : 'NOT configured (admin routes will fail)'}`)
 })

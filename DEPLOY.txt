@@ -90,8 +90,11 @@ services: **MySQL** and the **Beacon API**.
 
 7) Deploy / verify
    - Trigger deploy on the API service. Logs should show the API listening.
-   - Open GET https://YOUR-API-DOMAIN/api/health — expect JSON with "mysql": true and
-     "firebaseAdmin": true.
+   - Open GET https://YOUR-API-DOMAIN/api/health — JSON shows **mysql** and **firebaseAdmin** booleans.
+     If **mysql** is false, add or fix Variable References to your MySQL service (step 4) and redeploy.
+   - `/api/health` returns HTTP **200** when the process is up even if MySQL is not wired yet (so Railway
+     can finish deploying). Set **HEALTHCHECK_REQUIRE_MYSQL=true** only if you want the health
+     endpoint to return **503** whenever MySQL is down.
 
 8) Point Vercel at Railway
    - Vercel → Environment Variables → Production:
