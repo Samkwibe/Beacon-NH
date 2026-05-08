@@ -67,8 +67,10 @@ export function CommunityChat({ communityId, communityLabel }: { communityId: st
         console.error(err)
         setError(
           err.code === 'failed-precondition'
-            ? 'Firestore needs an index for community chat. Open the link in the browser console or Firebase console to create it.'
-            : 'Could not load messages. Check Firestore rules and your connection.',
+            ? import.meta.env.DEV
+              ? 'Firestore needs an index for community chat. Check the browser console for a link to create it.'
+              : 'This board is still getting ready. Please try again in a few minutes.'
+            : 'We could not load messages. Check your connection or try again later.',
         )
       },
     )
@@ -84,7 +86,12 @@ export function CommunityChat({ communityId, communityLabel }: { communityId: st
     signInAnonymously(auth)
       .catch((e) => {
         console.error(e)
-        if (!cancelled) setError('Enable Anonymous sign-in in Firebase Console → Authentication → Sign-in method, then reload.')
+        if (!cancelled)
+          setError(
+            import.meta.env.DEV
+              ? 'Enable Anonymous sign-in in Firebase (Authentication → Sign-in method), then reload.'
+              : 'We could not open the board right now. Please try again later or use Get help to reach Beacon NH.',
+          )
       })
       .finally(() => {
         if (!cancelled) queueMicrotask(() => setAuthReady(true))
@@ -96,7 +103,7 @@ export function CommunityChat({ communityId, communityLabel }: { communityId: st
 
   async function send() {
     if (!db || !auth?.currentUser) {
-      setError('Sign-in not ready. Reload the page or check Firebase Anonymous auth.')
+      setError('Please wait a moment and try again, or refresh the page.')
       return
     }
     const name = displayName.trim() || 'Neighbor'
@@ -125,38 +132,24 @@ export function CommunityChat({ communityId, communityLabel }: { communityId: st
   }
 
   if (!live) {
+    if (import.meta.env.DEV) {
+      console.info(
+        '[BeaconNH] Discussion needs Firebase web config in the build (VITE_FIREBASE_* in .env) and Firestore + Anonymous auth.',
+      )
+    }
     return (
-      <div className="community-panel community-panel--muted">
-        <p>
-          <strong>Community board</strong> — here you will be able to post short updates, questions, and
-          meet-up ideas for {communityLabel}. The box below appears when Beacon NH finishes connecting this
-          page to our live message service (one setup step on the hosting side).
+      <div className="community-panel community-panel--welcome">
+        <h2 className="community-board-title">Community discussion</h2>
+        <p className="community-board-lead">
+          This is a public space for {communityLabel} to share <strong>community news</strong>,{' '}
+          <strong>questions</strong>, <strong>ride or housing needs</strong>, and <strong>meet-up ideas</strong>.
+          It is meant to stay kind, practical, and respectful.
         </p>
         <p className="community-panel-note">
-          Right now: use the <strong>What&apos;s happening</strong> tab for news, or reach Beacon NH through
-          Get help / Contact — staff can pass messages along to community leaders.
+          The live board is opening soon. Until then, check the <strong>Updates</strong> tab for the latest
+          from Beacon NH, or use <strong>Get help</strong> and <strong>Email Beacon NH</strong> in the menu on
+          the side so staff can connect you.
         </p>
-        <details className="community-setup-details">
-          <summary className="community-setup-summary">For Beacon NH: turn on the discussion board</summary>
-          <ol className="community-setup-list">
-            <li>
-              In <strong>Vercel</strong> → your project → <strong>Settings</strong> →{' '}
-              <strong>Environment Variables</strong> → <strong>Production</strong>, add every variable from
-              your local <code className="community-code">.env.example</code> that starts with{' '}
-              <code className="community-code">VITE_FIREBASE_</code> (all six), using the same values as in
-              Firebase → Project settings → Your web app.
-            </li>
-            <li>
-              <strong>Redeploy</strong> the latest production deployment so those values are included in the
-              build (Vite bakes them in at build time).
-            </li>
-            <li>
-              In Firebase: <strong>Firestore rules</strong> published (see repo <code className="community-code">firestore.rules</code>),
-              index for <code className="community-code">community_messages</code>, and{' '}
-              <strong>Authentication → Anonymous</strong> enabled.
-            </li>
-          </ol>
-        </details>
       </div>
     )
   }
@@ -228,7 +221,8 @@ export function CommunityChat({ communityId, communityLabel }: { communityId: st
         </button>
       </div>
       <p className="community-chat-disclaimer">
-        Public board — stay kind. For emergencies call 911. For personal help from Beacon NH, use Contact or Get help.
+        Be respectful. No hate or harassment. For emergencies call <strong>911</strong>. For private help,
+        use <strong>Get help</strong> or email Beacon NH — do not post sensitive personal details here.
       </p>
     </div>
   )
