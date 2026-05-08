@@ -14,6 +14,9 @@ Frontend (Vercel, Netlify, etc.)
    harder-to-guess segment (e.g. ops-7f3a9c2e).
 3. vercel.json provides SPA fallback for React Router.
 4. Netlify: public/_redirects is copied into dist/ so client-side routes work.
+5. Community hub chat uses Firestore collection `community_messages`. Deploy updated `firestore.rules`
+   and `firestore.indexes.json` (Firebase CLI: `firebase deploy --only firestore`). In Firebase Console
+   → Authentication → Sign-in method, enable **Anonymous** so neighbors can post without a full account.
 
 Backend API (Node server/)
 ---------------------------

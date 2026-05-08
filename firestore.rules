@@ -14,5 +14,20 @@ service cloud.firestore {
         && request.resource.data.name.size() <= 120;
       allow update, delete: if request.auth != null;
     }
+    // Community hub discussion (anonymous or signed-in Firebase Auth)
+    match /community_messages/{msgId} {
+      allow read: if true;
+      allow create: if request.auth != null
+        && request.resource.data.communityId is string
+        && request.resource.data.communityId.size() > 0
+        && request.resource.data.communityId.size() <= 64
+        && request.resource.data.text is string
+        && request.resource.data.text.size() > 0
+        && request.resource.data.text.size() <= 2000
+        && request.resource.data.displayName is string
+        && request.resource.data.displayName.size() > 0
+        && request.resource.data.displayName.size() <= 80;
+      allow update, delete: if false;
+    }
   }
 }

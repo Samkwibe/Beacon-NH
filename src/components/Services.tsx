@@ -1,4 +1,5 @@
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from 'react-i18next'
+import { Link } from 'react-router-dom'
 
 export function Services() {
   const { t } = useTranslation();
@@ -65,6 +66,15 @@ export function Services() {
             <p>{t('services.foodDesc')}</p>
           </div>
         </a>
+        <Link to="/communities" className="svc-card" style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
+          <div className="svc-img"><img src="/kenyan-community.png" alt="Community hubs" /></div>
+          <div className="svc-overlay"></div>
+          <div className="svc-body">
+            <div className="svc-icon-sq">🌍</div>
+            <div className="svc-title">Community hubs</div>
+            <p>Country networks in Manchester — see what&apos;s happening and join the conversation in each community space.</p>
+          </div>
+        </Link>
       </div>
     </section>
   );
