@@ -81,9 +81,9 @@ export function PrivacyPage() {
 
         <h2 className="page-subtitle">Automated assistant (optional)</h2>
         <p className="page-body">
-          If enabled, the AI help guide sends your recent questions to our backend, which may call an external model to
-          draft a response. Do not paste sensitive personal or case details. The assistant is for general orientation
-          only, not legal or medical advice.
+          If enabled, the AI help guide sends your recent questions to our backend, which may call **Google Gemini** or
+          **OpenAI** (whichever is configured) to draft a response. Do not paste sensitive personal or case details. The
+          guide is for general orientation only, not legal or medical advice.
         </p>
 
         <h2 className="page-subtitle">Links</h2>

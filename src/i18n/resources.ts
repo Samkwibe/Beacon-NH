@@ -27,19 +27,27 @@ const kyrEn = {
 }
 
 const aiEn = {
-  openLabel: 'Open AI help guide',
-  title: 'AI help guide',
+  openLabel: 'Open newcomer guide (AI)',
+  title: 'Beacon guide',
+  subtitle: 'Google Gemini on your server · verify important details · 911 · 988 · 211',
   close: 'Close',
   disclaimer:
-    'An automated assistant can make mistakes. This is not legal or medical advice. Emergencies: 911. Crisis: 988. General help: 211 NH.',
+    'An automated guide can make mistakes. This is not legal or medical advice. Emergencies: 911. Crisis: 988. General help: 211 NH.',
   placeholder: 'Ask where to start (housing, food, English class…)…',
   send: 'Send',
   thinking: 'Thinking…',
-  error: 'Assistant unavailable. Dial 211 NH or open Services.',
+  error: 'Guide unavailable. Dial 211 NH or open Services.',
   apiMissing:
     'This page is not connected to the Beacon API yet. Set VITE_API_URL in your deploy (see DEPLOYMENT.md). For help now: dial 211 NH.',
   serverAiOff:
-    'The assistant needs OPENAI_API_KEY on the API server. Events and other pages still work; for live help dial 211 NH.',
+    'Set GEMINI_API_KEY (Google AI Studio) or OPENAI_API_KEY on the API server. For live help dial 211 NH.',
+  chip211: 'What is 211 NH?',
+  chipHousing: 'Housing — where do I start?',
+  chipEnglish: 'English / ESOL classes?',
+  chipFood: 'Food assistance',
+  chipLegal: 'Civil legal help (not 911)',
+  clearChat: 'Clear',
+  emptyHint: 'Tap a topic or type your own question below.',
 }
 
 const en = {

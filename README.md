@@ -7,7 +7,7 @@ Student-built **React + TypeScript** site that highlights **real** New Hampshire
 - **Routing**: `react-router-dom` — home, services, communities, events, stories, support partners, privacy, first-week guide, know-your-rights, and a gated admin path when enabled.
 - **i18n**: `react-i18next` with locales including `en`, `ar`, `fr`, `uk`, `sw`, `ne`, `rw` in `src/i18n/resources.ts`.
 - **Data**: Events and RSVPs load from **MySQL via REST** when `VITE_API_URL` is set, otherwise from **Firestore**, otherwise from **localStorage** for local-only demos. Community discussion and optional hub announcements use Firestore when `VITE_FIREBASE_*` is present.
-- **AI help guide (optional)**: Floating assistant calls `POST /api/ai-assistant` on your Beacon API (OpenAI). Enable with `VITE_AI_HELPER_ENABLED=true`, set `OPENAI_API_KEY` on the server. See **DEPLOYMENT.md** → *AI help guide*.
+- **AI help guide (optional)**: Floating **Beacon guide** calls `POST /api/ai-assistant`. Prefer **Google Gemini** (`GEMINI_API_KEY` on the API); OpenAI is a fallback. Enable in the SPA with `VITE_AI_HELPER_ENABLED=true`. See **DEPLOYMENT.md** → *AI help guide*.
 - **Admin**: `/admin` (or `VITE_ADMIN_ROUTE`) uses **Firebase Authentication** when the API or Firestore is active. In local dev without Firebase, the dashboard may fall back to an optional password from env — see `src/admin/Dashboard.tsx` (do not use dev defaults in production).
 
 ## Prerequisites
@@ -32,7 +32,7 @@ Open `http://localhost:5173`.
 3. `server/.env` from `server/.env.example`; root `.env` with `VITE_API_URL=http://localhost:3001` and `VITE_FIREBASE_*` if you use Firebase on the client.
 4. `npm run api:install && npm run api:dev` — health: `http://localhost:3001/api/health`.
 
-Optional **AI guide** locally: set `OPENAI_API_KEY` (and optionally `OPENAI_MODEL`) in `server/.env`, then in root `.env` add `VITE_AI_HELPER_ENABLED=true` and keep `VITE_API_URL=http://localhost:3001`. Restart API and Vite.
+Optional **AI guide** locally: set **`GEMINI_API_KEY`** (Google AI Studio) in `server/.env`, optional **`GEMINI_MODEL`**, then in root `.env` add `VITE_AI_HELPER_ENABLED=true` and keep `VITE_API_URL=http://localhost:3001`. Restart API and Vite. (OpenAI works instead if you omit Gemini and set `OPENAI_API_KEY`.)
 
 ## Deployment
 

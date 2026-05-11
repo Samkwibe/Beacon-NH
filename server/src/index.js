@@ -41,6 +41,88 @@ function initFirebaseAdmin() {
 
 const firebaseReady = initFirebaseAdmin()
 
+/** Shared system prompt for OpenAI and Gemini backends */
+const BEACON_AI_SYSTEM = `You are Beacon NH's triage helper for newcomers in Manchester, New Hampshire.
+You are not a lawyer or doctor. For emergencies say 911; mental health crisis 988; general referrals 211 NH.
+Give short, practical steps. Prefer linking to 211nh.org, nh.gov, or resettlement agencies' public pages when relevant.
+Do not invent phone numbers or government programs. If unsure, tell the user to dial 211 or speak with their case manager.`
+
+/** Normalize chat turns for Gemini (must use roles user | model). */
+function mergeGeminiContents(cleaned) {
+  const contents = []
+  for (const m of cleaned) {
+    const role = m.role === 'assistant' ? 'model' : 'user'
+    const text = m.content
+    const prev = contents[contents.length - 1]
+    if (prev && prev.role === role) {
+      prev.parts[0].text += '\n\n' + text
+    } else {
+      contents.push({ role, parts: [{ text }] })
+    }
+  }
+  return contents
+}
+
+async function runGeminiAssistant(system, cleaned, apiKey) {
+  const model = process.env.GEMINI_MODEL?.trim() || 'gemini-2.0-flash'
+  const contents = mergeGeminiContents(cleaned)
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`
+  const r = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-goog-api-key': apiKey,
+    },
+    body: JSON.stringify({
+      systemInstruction: { parts: [{ text: system }] },
+      contents,
+      generationConfig: {
+        maxOutputTokens: 768,
+        temperature: 0.45,
+      },
+    }),
+  })
+  const data = await r.json()
+  if (!r.ok) {
+    const msg = data?.error?.message || data?.error?.status || r.statusText || 'Gemini request failed'
+    throw new Error(String(msg))
+  }
+  const parts = data?.candidates?.[0]?.content?.parts
+  const text = Array.isArray(parts) ? parts.map((p) => (p?.text != null ? String(p.text) : '')).join('') : ''
+  const trimmed = String(text).trim()
+  if (!trimmed) {
+    const reason = data?.candidates?.[0]?.finishReason
+    throw new Error(
+      reason
+        ? `No answer returned (${reason}). Try a shorter question or dial 211 NH.`
+        : 'No answer returned. Try again or dial 211 NH.',
+    )
+  }
+  return trimmed
+}
+
+async function runOpenAiAssistant(system, cleaned, apiKey) {
+  const r = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: process.env.OPENAI_MODEL?.trim() || 'gpt-4o-mini',
+      messages: [{ role: 'system', content: system }, ...cleaned],
+      max_tokens: 600,
+    }),
+  })
+  const data = await r.json()
+  if (!r.ok) {
+    const msg = data?.error?.message || data?.error || r.statusText || 'OpenAI request failed'
+    throw new Error(String(msg))
+  }
+  const text = data?.choices?.[0]?.message?.content ?? ''
+  return String(text)
+}
+
 async function verifyBearer(req, res, next) {
   if (!firebaseReady) {
     return res.status(503).json({ error: 'Server missing Firebase Admin credentials' })
@@ -172,9 +254,14 @@ app.use(
 app.use(express.json({ limit: '512kb' }))
 
 app.post('/api/ai-assistant', async (req, res) => {
-  const key = process.env.OPENAI_API_KEY?.trim()
-  if (!key) {
-    return res.status(503).json({ error: 'AI assistant is not configured on this server' })
+  const geminiKey =
+    process.env.GEMINI_API_KEY?.trim() || process.env.GOOGLE_AI_API_KEY?.trim()
+  const openaiKey = process.env.OPENAI_API_KEY?.trim()
+  if (!geminiKey && !openaiKey) {
+    return res.status(503).json({
+      error:
+        'AI assistant is not configured — set GEMINI_API_KEY (recommended) or OPENAI_API_KEY on the server',
+    })
   }
   const { messages } = req.body ?? {}
   if (!Array.isArray(messages)) {
@@ -188,32 +275,13 @@ app.post('/api/ai-assistant', async (req, res) => {
   if (cleaned.length === 0) {
     return res.status(400).json({ error: 'At least one user or assistant message is required' })
   }
-  const system = `You are Beacon NH's triage helper for newcomers in Manchester, New Hampshire.
-You are not a lawyer or doctor. For emergencies say 911; mental health crisis 988; general referrals 211 NH.
-Give short, practical steps. Prefer linking to 211nh.org, nh.gov, or resettlement agencies' public pages when relevant.
-Do not invent phone numbers or government programs. If unsure, tell the user to dial 211 or speak with their case manager.`
   try {
-    const r = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${key}`,
-      },
-      body: JSON.stringify({
-        model: process.env.OPENAI_MODEL?.trim() || 'gpt-4o-mini',
-        messages: [{ role: 'system', content: system }, ...cleaned],
-        max_tokens: 600,
-      }),
-    })
-    const data = await r.json()
-    if (!r.ok) {
-      const msg = data?.error?.message || data?.error || r.statusText || 'OpenAI request failed'
-      return res.status(502).json({ error: String(msg) })
-    }
-    const text = data?.choices?.[0]?.message?.content ?? ''
-    res.json({ reply: String(text) })
+    const reply = geminiKey
+      ? await runGeminiAssistant(BEACON_AI_SYSTEM, cleaned, geminiKey)
+      : await runOpenAiAssistant(BEACON_AI_SYSTEM, cleaned, openaiKey)
+    res.json({ reply, provider: geminiKey ? 'gemini' : 'openai' })
   } catch (e) {
-    res.status(500).json({ error: e instanceof Error ? e.message : 'AI request failed' })
+    res.status(502).json({ error: e instanceof Error ? e.message : 'AI request failed' })
   }
 })
 
@@ -226,10 +294,18 @@ app.get('/api/health', async (_req, res) => {
   } catch (e) {
     mysqlError = e instanceof Error ? e.message : 'MySQL error'
   }
+  const geminiConfigured = Boolean(
+    process.env.GEMINI_API_KEY?.trim() || process.env.GOOGLE_AI_API_KEY?.trim(),
+  )
+  const openaiConfigured = Boolean(process.env.OPENAI_API_KEY?.trim())
   const payload = {
     ok: mysqlOk,
     mysql: mysqlOk,
     firebaseAdmin: firebaseReady,
+    ai: {
+      configured: geminiConfigured || openaiConfigured,
+      provider: geminiConfigured ? 'gemini' : openaiConfigured ? 'openai' : null,
+    },
     ...(mysqlError ? { error: mysqlError } : {}),
   }
   const strict =

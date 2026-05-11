@@ -25,7 +25,7 @@ Who does what before and after launch. Update this when roles change.
 | --- | --- | --- |
 | **Community discussion (Firestore)** | _Name:_ _______ | Review flagged content; apply [Privacy](/privacy): rules, bans, deletion requests. |
 | **Admin / Firebase users** | _Name:_ _______ | Who may publish events, RSVPs, **community hub posts**, and view private data. |
-| **AI assistant** (`OPENAI_API_KEY` on API server) | _Name:_ _______ | Keep key server-side only; disable with `VITE_AI_HELPER_ENABLED` if needed. |
+| **AI guide** (`GEMINI_API_KEY` or `OPENAI_API_KEY` on API) | _Name:_ _______ | Prefer Gemini; keep keys server-side only; disable with `VITE_AI_HELPER_ENABLED` if needed. |
 
 ## Deploy & secrets
 

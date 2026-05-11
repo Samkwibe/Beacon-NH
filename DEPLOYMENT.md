@@ -220,18 +220,22 @@ E) Smoke test
 
 AI help guide (optional)
 -----------------------
-The floating **AI** button is off unless you set **`VITE_AI_HELPER_ENABLED=true`** on the **frontend** build (Vercel).
+The floating **Beacon guide** button is off unless you set **`VITE_AI_HELPER_ENABLED=true`** on the **frontend** build (Vercel).
 
-1. **API (Railway or other host)** — set secrets:
-   - `OPENAI_API_KEY` — required for `POST /api/ai-assistant` to return answers (never put this in Vite / the browser).
-   - Optional: `OPENAI_MODEL` (defaults to `gpt-4o-mini`).
+1. **API (Railway or other host)** — set secrets (keys never go in Vite / the browser):
+   - **`GEMINI_API_KEY`** (recommended) — from [Google AI Studio](https://aistudio.google.com/app/apikey).  
+     Alias: **`GOOGLE_AI_API_KEY`** (same value, if you prefer that name).
+   - Optional: **`GEMINI_MODEL`** — defaults to `gemini-2.0-flash`. If Google returns “model not found”, set a model id from their docs (e.g. `gemini-2.5-flash`).
+   - **OpenAI fallback:** if you do **not** set a Gemini key, you can use **`OPENAI_API_KEY`** and optional **`OPENAI_MODEL`** (`gpt-4o-mini` default).  
+     If **both** Gemini and OpenAI are set, **Gemini is used first**.
 2. **Frontend** — same as events: **`VITE_API_URL`** must point at your API so the SPA can call `/api/ai-assistant`.
 3. Redeploy both so env vars apply.
-4. Quick check (replace URL):  
+4. **Health:** `GET /api/health` includes `"ai": { "configured": true|false, "provider": "gemini"|"openai"|null }`.
+5. Quick check (replace URL):  
    `curl -sS -X POST "https://YOUR-API-HOST/api/ai-assistant" -H "Content-Type: application/json" -d '{"messages":[{"role":"user","content":"Say hello in five words."}]}'`  
-   Expect JSON `{"reply":"..."}`. If you see `AI assistant is not configured`, the API is missing `OPENAI_API_KEY`.
+   Expect JSON `{"reply":"...","provider":"gemini"}`. If you see `not configured`, add **`GEMINI_API_KEY`** or **`OPENAI_API_KEY`** on the API.
 
-**Note:** Community **Discussion** tabs are separate (Firestore chat among neighbors, not OpenAI).
+**Note:** Community **Discussion** tabs are separate (Firestore chat among neighbors, not the AI guide).
 
 Secrets
 -------
