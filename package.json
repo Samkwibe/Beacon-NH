@@ -15,7 +15,9 @@
     "db:logs": "docker compose logs -f mysql",
     "docker:stack": "docker compose --profile api up -d --build",
     "docker:stack:logs": "docker compose --profile api logs -f api",
-    "docker:stack:down": "docker compose --profile api down"
+    "docker:stack:down": "docker compose --profile api down",
+    "smoke:api": "sh -c 'U=${SMOKE_API_URL:-http://localhost:3001}; echo GET \"$U/api/health\" && curl -sS \"$U/api/health\" && echo'",
+    "smoke:ai": "sh -c 'U=${SMOKE_API_URL:-http://localhost:3001}; curl -sS -X POST \"$U/api/ai-assistant\" -H \"Content-Type: application/json\" -d \"{\\\"messages\\\":[{\\\"role\\\":\\\"user\\\",\\\"content\\\":\\\"Say hello in five words.\\\"}]}\" && echo'"
   },
   "dependencies": {
     "firebase": "^12.13.0",

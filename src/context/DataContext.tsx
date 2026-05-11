@@ -15,17 +15,10 @@ import {
   deleteDoc,
   doc,
   serverTimestamp,
-  writeBatch,
 } from 'firebase/firestore'
 import { getDb } from '../firebase'
-import { DEFAULT_EVENTS, type Event } from '../data/eventsCatalog'
-import {
-  usesBeaconApi,
-  apiListEvents,
-  apiCreateEvent,
-  apiDeleteEvent,
-  apiSeedDemo,
-} from '../lib/beaconApi'
+import { type Event } from '../data/eventsCatalog'
+import { usesBeaconApi, apiListEvents, apiCreateEvent, apiDeleteEvent } from '../lib/beaconApi'
 
 /* eslint-disable react-refresh/only-export-components -- context provider + hook pattern */
 
@@ -46,18 +39,6 @@ function sortByDateAsc(list: Event[]): Event[] {
   return [...list].sort((a, b) => a.date.localeCompare(b.date))
 }
 
-function eventPayload(ev: Event) {
-  return {
-    title: ev.title,
-    desc: ev.desc,
-    date: ev.date,
-    location: ev.location,
-    category: ev.category,
-    img: ev.img || '',
-    isFeatured: Boolean(ev.isFeatured),
-  }
-}
-
 type DataContextType = {
   events: Event[]
   loading: boolean
@@ -73,7 +54,6 @@ type DataContextType = {
     idToken?: string | null,
   ) => Promise<void>
   deleteEvent: (id: string, idToken?: string | null) => Promise<void>
-  seedDemoEvents: (idToken?: string | null) => Promise<void>
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined)
@@ -90,12 +70,12 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     if (saved) {
       try {
         const parsed = JSON.parse(saved) as Event[]
-        return Array.isArray(parsed) && parsed.length ? sortByDateAsc(parsed) : DEFAULT_EVENTS
+        return Array.isArray(parsed) && parsed.length ? sortByDateAsc(parsed) : []
       } catch {
-        return DEFAULT_EVENTS
+        return []
       }
     }
-    return DEFAULT_EVENTS
+    return []
   })
 
   const [loading, setLoading] = useState(usesMysqlApi || usesFirestore)
@@ -216,28 +196,6 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  const seedDemoEvents = async (idToken?: string | null) => {
-    if (usesMysqlApi) {
-      if (!idToken) throw new Error('Sign in required.')
-      await apiSeedDemo(idToken)
-      await refreshMysqlEvents()
-      return
-    }
-    if (!db) {
-      setEvents(sortByDateAsc([...DEFAULT_EVENTS]))
-      return
-    }
-    const batch = writeBatch(db)
-    for (const ev of DEFAULT_EVENTS) {
-      const ref = doc(collection(db, 'events'))
-      batch.set(ref, {
-        ...eventPayload(ev),
-        createdAt: serverTimestamp(),
-      })
-    }
-    await batch.commit()
-  }
-
   return (
     <DataContext.Provider
       value={{
@@ -249,7 +207,6 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         authUsesFirebase,
         addEvent,
         deleteEvent,
-        seedDemoEvents,
       }}
     >
       {children}

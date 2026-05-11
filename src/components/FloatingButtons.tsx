@@ -1,58 +1,102 @@
-import { useState } from 'react';
+import { useState } from 'react'
+import { NH_211, CRISIS_988, LEGAL_603_INTAKE } from '../data/nhPublicResources'
 
 export function FloatingButtons() {
-  const [modalOpen, setModalOpen] = useState(false);
-  const waDigits = (import.meta.env.VITE_WHATSAPP_E164 || '15555550100').replace(/\D/g, '');
+  const [modalOpen, setModalOpen] = useState(false)
+  const rawWa = import.meta.env.VITE_WHATSAPP_E164?.trim()
+  const waDigits = rawWa?.replace(/\D/g, '') ?? ''
+  const showWhatsApp = waDigits.length >= 10
 
   return (
     <>
-      <button type="button" className="sos-btn" onClick={() => setModalOpen(true)}>
-        🆘 I Need Help Now
+      <button
+        type="button"
+        className="sos-btn"
+        onClick={() => setModalOpen(true)}
+        aria-haspopup="dialog"
+        aria-controls="sosModal"
+        aria-expanded={modalOpen}
+      >
+        <span aria-hidden>🆘</span> I Need Help Now
       </button>
 
-      <button className="wa-btn" type="button" onClick={() => window.open(`https://wa.me/${waDigits}`, '_blank', 'noopener,noreferrer')}>
-        💬 WhatsApp Us
-      </button>
+      {showWhatsApp ? (
+        <button
+          className="wa-btn"
+          type="button"
+          aria-label="Open WhatsApp chat"
+          onClick={() => window.open(`https://wa.me/${waDigits}`, '_blank', 'noopener,noreferrer')}
+        >
+          <span aria-hidden>💬</span> WhatsApp Us
+        </button>
+      ) : null}
 
-      <div className={`modal-bg ${modalOpen ? 'open' : ''}`} id="sosModal" onClick={(e) => {
-        if ((e.target as Element).id === 'sosModal') setModalOpen(false);
-      }}>
-        <div className="modal">
-          <button type="button" className="modal-close" onClick={() => setModalOpen(false)}>✕</button>
-          <h2>We're here for you</h2>
-          <p>Choose what you need right now. All services are free and confidential.</p>
+      <div
+        className={`modal-bg ${modalOpen ? 'open' : ''}`}
+        id="sosModal"
+        onClick={(e) => {
+          if ((e.target as Element).id === 'sosModal') setModalOpen(false)
+        }}
+      >
+        <div className="modal" role="alertdialog" aria-modal="true" aria-labelledby="sos-modal-title">
+          <button
+            type="button"
+            className="modal-close"
+            onClick={() => setModalOpen(false)}
+            aria-label="Close help menu"
+          >
+            ✕
+          </button>
+          <h2 id="sos-modal-title">We're here for you</h2>
+          <p role="alert">
+            In an emergency call <strong>911</strong>. For mental health crisis, call or text <strong>988</strong>.
+          </p>
+          <p>Choose what you need right now. Numbers below are statewide public helplines — not ads.</p>
           <div className="sos-items">
-            <a href="tel:211" className="sos-item">
+            <a href={NH_211.telHref} className="sos-item">
               <div className="sos-emoji">🏠</div>
               <div>
-                <h4>Emergency Housing</h4>
-                <p>Dial 211 — NH free helpline, 24/7, no cost</p>
+                <h4>Housing &amp; basic needs</h4>
+                <p>
+                  {NH_211.name} — dial {NH_211.dial} or {NH_211.tollFreeDisplay} (24/7)
+                </p>
               </div>
             </a>
-            <a href="tel:+16036242010" className="sos-item">
+            <a href={LEGAL_603_INTAKE.telHref} className="sos-item">
               <div className="sos-emoji">⚖️</div>
               <div>
-                <h4>Legal Emergency</h4>
-                <p>NH Legal Assistance — free immigration help</p>
+                <h4>Civil legal help</h4>
+                <p>
+                  {LEGAL_603_INTAKE.name} — {LEGAL_603_INTAKE.phoneDisplay}
+                </p>
               </div>
             </a>
-            <a href="tel:211" className="sos-item">
+            <a href={NH_211.telHref} className="sos-item">
               <div className="sos-emoji">🍎</div>
               <div>
-                <h4>Food & Basic Needs</h4>
-                <p>NH Food Bank & emergency food resources</p>
+                <h4>Food &amp; referrals</h4>
+                <p>{NH_211.name} can connect you to food programs and more</p>
               </div>
             </a>
-            <a href="tel:988" className="sos-item">
+            <a href={CRISIS_988.telHref} className="sos-item">
               <div className="sos-emoji">🧠</div>
               <div>
-                <h4>Mental Health Crisis</h4>
-                <p>Call or text 988 — free, 24/7 crisis line</p>
+                <h4>Mental health crisis</h4>
+                <p>Call or text 988 — free, 24/7</p>
               </div>
             </a>
           </div>
+          <p className="sos-modal-foot">
+            <a href={NH_211.website} target="_blank" rel="noopener noreferrer">
+              211nh.org
+            </a>{' '}
+            ·{' '}
+            <a href={LEGAL_603_INTAKE.website} target="_blank" rel="noopener noreferrer">
+              603legalaid.org
+            </a>
+          </p>
         </div>
       </div>
     </>
-  );
+  )
 }

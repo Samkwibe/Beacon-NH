@@ -74,7 +74,6 @@ export function EventDetail() {
         </Link>
         <div className="event-detail-tags">
           <span className="event-detail-tag">{event.category}</span>
-          <span className="event-detail-tag event-detail-tag--muted">Free</span>
         </div>
         <h1 className="event-detail-title">{event.title}</h1>
         <div className="event-detail-meta">

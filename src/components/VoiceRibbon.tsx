@@ -1,45 +1,49 @@
 import { Link } from 'react-router-dom'
 
-const quotes = [
+const HIGHLIGHTS: { title: string; body: string; href: string; linkLabel: string }[] = [
   {
-    text: 'They answered in my language on the first call. I did not feel alone anymore.',
-    name: 'Community member',
-    note: 'Manchester via WhatsApp',
+    title: '211 NH',
+    body: 'Granite United Way operates New Hampshire’s 211 line for housing, food, utilities, and more — with language support.',
+    href: 'https://211nh.org',
+    linkLabel: '211nh.org',
   },
   {
-    text: 'Free legal guidance changed everything for our asylum timeline.',
-    name: 'Family served · 2024',
-    note: 'Legal navigation program',
+    title: 'Civil legal intake',
+    body: '603 Legal Aid screens callers for free civil legal help and partners with NH Legal Assistance among others.',
+    href: 'https://www.603legalaid.org',
+    linkLabel: '603legalaid.org',
   },
   {
-    text: 'From shelter referral to ESOL class — one hub made it simple.',
-    name: 'New arrival parent',
-    note: 'Housing & education pathway',
+    title: 'State program context',
+    body: 'NH DHHS summarizes how the federal Refugee Admissions Program operates in the state and lists resettlement partners.',
+    href: 'https://www.dhhs.nh.gov/programs-services/health-equity/operation-united-states-refugee-admissions-program-new-hampshire',
+    linkLabel: 'DHHS overview',
   },
 ]
 
 export function VoiceRibbon() {
   return (
-    <section className="voice-ribbon" aria-label="What neighbors say">
+    <section className="voice-ribbon" aria-label="Verified starting points">
       <div className="voice-ribbon-head">
-        <span className="voice-ribbon-eyebrow">Community voices</span>
-        <h2 className="voice-ribbon-title">Dignity-first support that meets people where they are.</h2>
+        <span className="voice-ribbon-eyebrow">Sources first</span>
+        <h2 className="voice-ribbon-title">Start with agencies you can look up yourself.</h2>
       </div>
       <div className="voice-ribbon-grid">
-        {quotes.map((q) => (
-          <blockquote key={q.text} className="voice-card">
-            <p className="voice-card-quote">&ldquo;{q.text}&rdquo;</p>
-            <footer>
-              <cite className="voice-card-name">{q.name}</cite>
-              <span className="voice-card-note">{q.note}</span>
-            </footer>
-          </blockquote>
+        {HIGHLIGHTS.map((item) => (
+          <div key={item.title} className="voice-card voice-card--fact">
+            <p className="voice-card-quote" style={{ fontStyle: 'normal', margin: 0 }}>
+              <strong>{item.title}.</strong> {item.body}{' '}
+              <a href={item.href} target="_blank" rel="noopener noreferrer">
+                {item.linkLabel} →
+              </a>
+            </p>
+          </div>
         ))}
       </div>
       <p className="voice-ribbon-foot">
-        <Link to="/stories">Read longer stories</Link>
+        <Link to="/stories">Stories &amp; consent</Link>
         <span aria-hidden="true"> · </span>
-        <Link to="/events">See upcoming events</Link>
+        <Link to="/events">Upcoming events</Link>
       </p>
     </section>
   )

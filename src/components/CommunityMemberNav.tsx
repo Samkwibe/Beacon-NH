@@ -1,4 +1,10 @@
 import { Link } from 'react-router-dom'
+import {
+  NH_211,
+  CRISIS_988,
+  LEGAL_603_INTAKE,
+  NHLA_MANCHESTER,
+} from '../data/nhPublicResources'
 
 const nav_link = 'community-member-nav-link'
 const nav_section = 'community-member-nav-section-title'
@@ -16,7 +22,7 @@ type Props = {
 }
 
 /**
- * Crisis lines, messaging, and site sections — tuned for community hub visitors.
+ * Crisis lines and site links — phones match nhPublicResources.ts (verified program numbers).
  */
 export function CommunityMemberNav({ contactEmail }: Props) {
   const wa = whatsappHref()
@@ -25,26 +31,36 @@ export function CommunityMemberNav({ contactEmail }: Props) {
     <div className="community-member-nav-stack">
       <nav className="community-member-nav community-member-nav--urgent" aria-label="Urgent and crisis help">
         <p className={nav_section}>Urgent &amp; crisis</p>
-        <p className="community-member-nav-hint">Life-threatening emergency — always call 911 first.</p>
+        <p className="community-member-nav-hint">Life-threatening emergency — call 911 first.</p>
         <ul className="community-member-nav-list">
           <li>
             <a className={`${nav_link} community-member-nav-link--urgent`} href="tel:911">
-              Call 911 — Emergency
+              911 — Emergency
             </a>
           </li>
           <li>
-            <a className={nav_link} href="tel:988">
-              Call or text 988 — Mental health crisis (24/7)
+            <a className={nav_link} href={CRISIS_988.telHref}>
+              988 — Mental health crisis (24/7)
             </a>
           </li>
           <li>
-            <a className={nav_link} href="tel:211">
-              Dial 211 — NH helpline (housing, food, basics)
+            <a className={nav_link} href={NH_211.telHref}>
+              {NH_211.dial} — {NH_211.name}
             </a>
           </li>
           <li>
-            <a className={nav_link} href="tel:+16036242010">
-              NH Legal Assistance — Immigration help
+            <a className={nav_link} href={NH_211.telTollFreeHref}>
+              {NH_211.tollFreeDisplay} — {NH_211.name} (toll-free)
+            </a>
+          </li>
+          <li>
+            <a className={nav_link} href={LEGAL_603_INTAKE.telHref}>
+              {LEGAL_603_INTAKE.phoneDisplay} — {LEGAL_603_INTAKE.name}
+            </a>
+          </li>
+          <li>
+            <a className={nav_link} href={NHLA_MANCHESTER.telHref}>
+              {NHLA_MANCHESTER.phoneDisplay} — {NHLA_MANCHESTER.name}
             </a>
           </li>
         </ul>
@@ -102,8 +118,8 @@ export function CommunityMemberNav({ contactEmail }: Props) {
             </Link>
           </li>
           <li>
-            <Link className={nav_link} to="/donate">
-              Support Beacon NH
+            <Link className={nav_link} to="/support">
+              Support partners
             </Link>
           </li>
           <li>

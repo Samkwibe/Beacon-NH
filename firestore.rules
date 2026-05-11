@@ -29,5 +29,25 @@ service cloud.firestore {
         && request.resource.data.displayName.size() <= 80;
       allow update, delete: if false;
     }
+    // Partner-published updates & community event blurbs (Firebase Auth accounts you issue to IINE / community reps)
+    match /community_announcements/{annId} {
+      allow read: if true;
+      allow create: if request.auth != null
+        && request.resource.data.communityId is string
+        && request.resource.data.communityId.size() > 0
+        && request.resource.data.communityId.size() <= 64
+        && request.resource.data.title is string
+        && request.resource.data.title.size() > 0
+        && request.resource.data.title.size() <= 200
+        && request.resource.data.body is string
+        && request.resource.data.body.size() > 0
+        && request.resource.data.body.size() <= 4000
+        && request.resource.data.date is string
+        && request.resource.data.date.size() >= 8
+        && request.resource.data.date.size() <= 32
+        && request.resource.data.kind is string
+        && (request.resource.data.kind == 'news' || request.resource.data.kind == 'event');
+      allow update, delete: if request.auth != null;
+    }
   }
 }

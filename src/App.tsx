@@ -16,18 +16,24 @@ import { Stories } from './components/Stories'
 import { Events } from './components/Events'
 import { Languages } from './components/Languages'
 import { ResourcesMap } from './components/ResourcesMap'
-import { Donate } from './components/Donate'
+import { SupportCommunity } from './components/SupportCommunity'
 import { Footer } from './components/Footer'
 import { FloatingButtons } from './components/FloatingButtons'
 import { VoiceRibbon } from './components/VoiceRibbon'
 import { PartnerStrip } from './components/PartnerStrip'
 import { ImpactStrip } from './components/ImpactStrip'
+import { IineSpotlight } from './components/IineSpotlight'
 import { FaqSection } from './components/FaqSection'
 import { Dashboard } from './admin/Dashboard'
 import { AboutPage } from './pages/AboutPage'
 import { EventDetail } from './pages/EventDetail'
 import { CommunityDetail } from './pages/CommunityDetail'
 import { PrivacyPage } from './pages/PrivacyPage'
+import { FirstWeekInNH } from './pages/FirstWeekInNH'
+import { KnowYourRights } from './pages/KnowYourRights'
+import { SkipToMain } from './components/SkipToMain'
+import { PolicyAlertBar } from './components/PolicyAlertBar'
+import { AiHelper } from './components/AiHelper'
 import { usePageMeta } from './hooks/usePageMeta'
 import { getAdminRouteSegment, isAdminUiEnabled } from './lib/adminRoute'
 
@@ -47,20 +53,27 @@ function ScrollToTop() {
 }
 
 function Ticker() {
+  const items = [
+    { star: '★', text: '211 NH — information & referral (24/7)' },
+    { star: '★', text: '988 — Suicide & Crisis Lifeline' },
+    { star: '★', text: '603 Legal Aid — civil legal screening' },
+    { star: '★', text: 'NH DHHS — U.S. Refugee Admissions Program (NH)' },
+    { star: '★', text: 'Events on this site — from your admin / API / Firestore' },
+    { star: '★', text: 'IINE — Manchester resettlement, ESOL, LNA training, Language Services HQ' },
+    { star: '★', text: 'Ascentria & IINE — NH’s federally funded resettlement affiliates (per DHHS)' },
+    { star: '★', text: 'NH Legal Assistance — Manchester office (603) 668-2900' },
+    { star: '★', text: 'Not an emergency service — call 911 for emergencies' },
+  ]
   return (
     <div className="ticker">
       <div className="t-track">
         {[...Array(2)].map((_, i) => (
           <div key={i} style={{ display: 'flex', gap: '32px' }}>
-            <span className="t-item"><span className="t-star">★</span> Free Housing Support</span>
-            <span className="t-item"><span className="t-star">★</span> Immigration Legal Aid</span>
-            <span className="t-item"><span className="t-star">★</span> ESOL English Classes</span>
-            <span className="t-item"><span className="t-star">★</span> Mental Health Support</span>
-            <span className="t-item"><span className="t-star">★</span> NH Food Bank Access</span>
-            <span className="t-item"><span className="t-star">★</span> Employment Services</span>
-            <span className="t-item"><span className="t-star">★</span> 10 Languages Supported</span>
-            <span className="t-item"><span className="t-star">★</span> 100% Confidential & Free</span>
-            <span className="t-item"><span className="t-star">★</span> Manchester, NH Community</span>
+            {items.map((item) => (
+              <span key={`${i}-${item.text}`} className="t-item">
+                <span className="t-star">{item.star}</span> {item.text}
+              </span>
+            ))}
           </div>
         ))}
       </div>
@@ -80,6 +93,7 @@ function HomePage() {
       <VoiceRibbon />
       <QuickHelp />
       <PartnerStrip />
+      <IineSpotlight />
       <About />
       <ImpactStrip />
     </>
@@ -116,14 +130,14 @@ function EventsPage() {
   )
 }
 
-function DonatePage() {
+function SupportPage() {
   usePageMeta(
-    'Donate',
-    'Support Beacon NH — tax-deductible donations sustain free programs for refugee families in Manchester.',
+    'Support',
+    'Give through verified New Hampshire nonprofits with real fiscal sponsors — resettlement, food security, civil legal access, and more.',
   )
   return (
     <div className="page-with-nav">
-      <Donate />
+      <SupportCommunity />
     </div>
   )
 }
@@ -134,26 +148,34 @@ function AppRoutes() {
   const adminUiOn = isAdminUiEnabled()
   return (
     <>
+      <SkipToMain />
+      <PolicyAlertBar />
       <ScrollToTop />
       <FloatingButtons />
       <Navigation />
-      <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/about" element={<AboutPage />} />
-        <Route path="/communities" element={<Communities />} />
-        <Route path="/communities/:id" element={<CommunityDetail />} />
-        <Route path="/services" element={<ServicesPage />} />
-        <Route path="/stories" element={<Stories />} />
-        <Route path="/events" element={<EventsPage />} />
-        <Route path="/events/:id" element={<EventDetail />} />
-        <Route path="/donate" element={<DonatePage />} />
-        <Route path="/privacy" element={<PrivacyPage />} />
-        {adminUiOn ? (
-          <Route path={adminPathSegment} element={<Dashboard />} />
-        ) : null}
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+      <main id="main-content" tabIndex={-1}>
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/communities" element={<Communities />} />
+          <Route path="/communities/:id" element={<CommunityDetail />} />
+          <Route path="/services" element={<ServicesPage />} />
+          <Route path="/stories" element={<Stories />} />
+          <Route path="/events" element={<EventsPage />} />
+          <Route path="/events/:id" element={<EventDetail />} />
+          <Route path="/support" element={<SupportPage />} />
+          <Route path="/donate" element={<Navigate to="/support" replace />} />
+          <Route path="/first-week-nh" element={<FirstWeekInNH />} />
+          <Route path="/know-your-rights" element={<KnowYourRights />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
+          {adminUiOn ? (
+            <Route path={adminPathSegment} element={<Dashboard />} />
+          ) : null}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </main>
       <Footer />
+      <AiHelper />
     </>
   )
 }

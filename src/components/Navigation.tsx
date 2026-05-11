@@ -1,11 +1,13 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useLocation } from 'react-router-dom'
 
-const languages = [
+type LangRow = { native: string; en: string; code: string; flag: string; i18nCode?: string }
+
+const languages: LangRow[] = [
   { native: 'English', en: 'English', code: 'en', flag: '🇺🇸' },
   { native: 'العربية', en: 'Arabic', code: 'ar', flag: '🇸🇦' },
-  { native: 'Soomaali', en: 'Somali', code: 'so', flag: '🇸🇴' },
+  { native: 'Soomaali', en: 'Somali', code: 'so', flag: '🇸🇴', i18nCode: 'sw' },
   { native: 'دری / پښتو', en: 'Dari / Pashto', code: 'fa', flag: '🇦🇫' },
   { native: 'ትግርኛ', en: 'Tigrinya', code: 'ti', flag: '🇪🇷' },
   { native: 'Français', en: 'French', code: 'fr', flag: '🇫🇷' },
@@ -13,6 +15,8 @@ const languages = [
   { native: 'Українська', en: 'Ukrainian', code: 'uk', flag: '🇺🇦' },
   { native: 'Kiswahili', en: 'Swahili', code: 'sw', flag: '🇰🇪' },
   { native: 'አማርኛ', en: 'Amharic', code: 'am', flag: '🇪🇹' },
+  { native: 'नेपाली', en: 'Nepali', code: 'ne', flag: '🇳🇵' },
+  { native: 'Ikinyarwanda', en: 'Kinyarwanda', code: 'rw', flag: '🇷🇼' },
 ]
 
 export function Navigation() {
@@ -20,8 +24,12 @@ export function Navigation() {
   const location = useLocation()
   const [lddOpen, setLddOpen] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
-  const [selectedLang, setSelectedLang] = useState(languages[0])
   const dropdownRef = useRef<HTMLDivElement>(null)
+
+  const selectedLang = useMemo(() => {
+    const base = i18n.language.replace('_', '-').split('-')[0]?.toLowerCase() ?? 'en'
+    return languages.find((l) => (l.i18nCode ?? l.code).toLowerCase() === base) ?? languages[0]
+  }, [i18n.language])
 
   useEffect(() => {
     let active = true
@@ -63,9 +71,8 @@ export function Navigation() {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  const handleLangChange = (lang: (typeof languages)[0]) => {
-    setSelectedLang(lang)
-    i18n.changeLanguage(lang.code)
+  const handleLangChange = (lang: LangRow) => {
+    void i18n.changeLanguage(lang.i18nCode ?? lang.code)
     setLddOpen(false)
   }
 
@@ -133,9 +140,19 @@ export function Navigation() {
         <div className="nav-tail">
           <div className="nav-actions">
             <div className={`ldd ${lddOpen ? 'open' : ''}`} id="ldd" ref={dropdownRef}>
-              <button type="button" className="ldd-btn" onClick={() => setLddOpen(!lddOpen)}>
-                🌍 <span className="ldd-current">{selectedLang.native}</span>{' '}
-                <span className="arr">▾</span>
+              <button
+                type="button"
+                className="ldd-btn"
+                onClick={() => setLddOpen(!lddOpen)}
+                aria-expanded={lddOpen}
+                aria-haspopup="listbox"
+                aria-label={`${t('nav.selectLanguage')}: ${selectedLang.native}`}
+              >
+                <span aria-hidden>🌍</span>{' '}
+                <span className="ldd-current">{selectedLang.native}</span>{' '}
+                <span className="arr" aria-hidden>
+                  ▾
+                </span>
               </button>
               <div className="ldd-menu">
                 <div className="ldd-head">{t('nav.selectLanguage')}</div>
@@ -152,7 +169,7 @@ export function Navigation() {
                 ))}
               </div>
             </div>
-            <Link to="/donate" className="nav-donate" onClick={closeMobileAndNavigate}>
+            <Link to="/support" className="nav-donate" onClick={closeMobileAndNavigate}>
               {t('nav.donate')}
             </Link>
           </div>

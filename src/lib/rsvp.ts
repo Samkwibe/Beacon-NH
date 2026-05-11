@@ -37,7 +37,10 @@ export async function submitRsvp(payload: RsvpPayload): Promise<void> {
   const prev = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]') as Record<string, unknown>[]
   prev.unshift({
     ...payload,
-    id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+    id:
+      typeof crypto !== 'undefined' && 'randomUUID' in crypto
+        ? crypto.randomUUID()
+        : `rsvp-${Date.now()}`,
     createdAt: new Date().toISOString(),
   })
   localStorage.setItem(STORAGE_KEY, JSON.stringify(prev))

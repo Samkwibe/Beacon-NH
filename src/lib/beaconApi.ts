@@ -48,15 +48,6 @@ export async function apiDeleteEvent(id: string, idToken: string): Promise<void>
   if (!res.ok) throw new Error(await res.text())
 }
 
-export async function apiSeedDemo(idToken: string): Promise<void> {
-  const b = getApiBase()
-  const res = await fetch(`${b}/api/admin/seed-demo`, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${idToken}` },
-  })
-  if (!res.ok) throw new Error(await res.text())
-}
-
 export async function apiSubmitRsvp(payload: {
   eventId: string
   eventTitle: string
@@ -99,4 +90,32 @@ export async function apiListRsvps(idToken: string): Promise<ApiRsvpRow[]> {
   })
   if (!res.ok) throw new Error(await res.text())
   return res.json()
+}
+
+export async function apiAiAssistant(
+  messages: { role: 'user' | 'assistant'; content: string }[],
+): Promise<string> {
+  const b = getApiBase()
+  if (!b) throw new Error('API URL not configured')
+  const res = await fetch(`${b}/api/ai-assistant`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ messages }),
+  })
+  let payload: unknown = null
+  try {
+    payload = await res.json()
+  } catch {
+    /* ignore */
+  }
+  const err =
+    payload && typeof payload === 'object' && 'error' in payload && typeof (payload as { error: unknown }).error === 'string'
+      ? (payload as { error: string }).error
+      : null
+  if (!res.ok) throw new Error(err || `Request failed (${res.status})`)
+  const reply =
+    payload && typeof payload === 'object' && 'reply' in payload && typeof (payload as { reply: unknown }).reply === 'string'
+      ? (payload as { reply: string }).reply
+      : ''
+  return reply
 }

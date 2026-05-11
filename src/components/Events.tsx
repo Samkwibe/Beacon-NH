@@ -32,7 +32,8 @@ export function Events() {
           Upcoming <em>Events</em>
         </h2>
         <p className="s-sub">
-          All events are free and open to everyone. All languages welcome. Bring your family.
+          Events shown here are added by the Beacon NH team. Dates and details can change—confirm with the
+          organizer when you plan to attend.
         </p>
         <div className="ev-filters" role="group" aria-label="Filter by category">
           {chips.map((c) => (
@@ -59,16 +60,14 @@ export function Events() {
         </div>
       )}
 
-      <div className="events-layout">
+      <div className={`events-layout${featured ? '' : ' events-layout--solo'}`}>
         {featured && (
-          <div className="ev-featured">
-            <img
-              src={
-                featured.img ||
-                'https://images.unsplash.com/photo-1511632765486-a01980e01a18?w=800&q=75'
-              }
-              alt={featured.title}
-            />
+          <div
+            className={`ev-featured${featured.img ? '' : ' ev-featured--noimg'}`}
+            role="article"
+            aria-label={featured.title}
+          >
+            {featured.img ? <img src={featured.img} alt="" /> : null}
             <div className="ev-ov"></div>
             <div className="ev-ft-body">
               <span className="ev-tag">{featured.category}</span>
@@ -114,12 +113,6 @@ export function Events() {
                       style={{ background: 'rgba(46,110,74,.12)', color: '#2E6E4A' }}
                     >
                       {ev.category}
-                    </span>
-                    <span
-                      className="ev-pill"
-                      style={{ background: 'rgba(46,110,74,.08)', color: '#4A9669' }}
-                    >
-                      Free
                     </span>
                   </div>
                 </div>

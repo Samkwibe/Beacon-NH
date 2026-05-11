@@ -1,9 +1,11 @@
 import { useParams, Link } from 'react-router-dom'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { usePageMeta } from '../hooks/usePageMeta'
-import { getCommunity } from '../data/communitiesCatalog'
+import { getCommunity, communityHubGradient, type CommunityUpdate } from '../data/communitiesCatalog'
 import { CommunityChat } from '../components/CommunityChat'
 import { CommunityMemberNav } from '../components/CommunityMemberNav'
+import { NhVerifiedResources } from '../components/NhVerifiedResources'
+import { useCommunityAnnouncements } from '../hooks/useCommunityAnnouncements'
 
 type HubTab = 'about' | 'updates' | 'chat'
 
@@ -16,6 +18,26 @@ export function CommunityDetail() {
     comm?.name ?? 'Community',
     comm?.fullDesc ?? 'Learn about refugee-led communities connected with Beacon NH in Manchester.',
   )
+
+  const { rows: liveAnnouncements, loading: annLoading, error: annError } = useCommunityAnnouncements(comm?.id)
+
+  type MergedUpdate = CommunityUpdate & { kind?: 'news' | 'event' }
+
+  const mergedUpdates: MergedUpdate[] = useMemo(() => {
+    if (!comm) return []
+    const fromLive: MergedUpdate[] = liveAnnouncements.map((a) => ({
+      title: a.title,
+      body: a.body,
+      date: a.date,
+      kind: a.kind,
+    }))
+    const fromCatalog: MergedUpdate[] = comm.updates.map((u) => ({ ...u }))
+    const sortKey = (d: string) => {
+      const t = Date.parse(d)
+      return Number.isFinite(t) ? t : 0
+    }
+    return [...fromLive, ...fromCatalog].sort((a, b) => sortKey(b.date) - sortKey(a.date))
+  }, [liveAnnouncements, comm])
 
   if (!comm) {
     return (
@@ -43,7 +65,11 @@ export function CommunityDetail() {
   return (
     <article className="community-detail page-with-nav">
       <div className="community-detail-hero">
-        <img src={comm.img} alt={comm.name} />
+        <div
+          className="community-detail-hero-bg"
+          style={{ background: communityHubGradient(comm.id) }}
+          aria-hidden
+        />
         <div className="community-detail-hero-grad" />
         <div className="community-detail-hero-text">
           <div className="community-detail-flag" aria-hidden>
@@ -72,9 +98,12 @@ export function CommunityDetail() {
             ).map(([key, label]) => (
               <button
                 key={key}
+                id={`hub-tab-${key}`}
                 type="button"
                 role="tab"
                 aria-selected={tab === key}
+                aria-controls={`hub-panel-${key}`}
+                tabIndex={tab === key ? 0 : -1}
                 className={`community-hub-tab ${tab === key ? 'community-hub-tab--on' : ''}`}
                 onClick={() => setTab(key)}
               >
@@ -84,7 +113,13 @@ export function CommunityDetail() {
           </div>
 
           {tab === 'about' ? (
-            <>
+            <div
+              id="hub-panel-about"
+              role="tabpanel"
+              aria-labelledby="hub-tab-about"
+              tabIndex={0}
+              className="community-hub-panel"
+            >
               <p className="community-detail-desc">{comm.fullDesc}</p>
               <div className="community-highlights">
                 <h2 className="community-highlights-title">Tips for this community</h2>
@@ -105,7 +140,7 @@ export function CommunityDetail() {
                     Email Beacon NH
                   </a>
                 ) : (
-                  <Link className="btn-primary community-detail-cta" to="/donate">
+                  <Link className="btn-primary community-detail-cta" to="/support">
                     Support Beacon NH
                   </Link>
                 )}
@@ -113,38 +148,78 @@ export function CommunityDetail() {
                   Get help
                 </Link>
               </div>
-            </>
+            </div>
           ) : null}
 
           {tab === 'updates' ? (
-            <div className="community-panel community-updates">
+            <div
+              id="hub-panel-updates"
+              role="tabpanel"
+              aria-labelledby="hub-tab-updates"
+              tabIndex={0}
+              className="community-hub-panel community-panel community-updates"
+            >
+              <NhVerifiedResources compact />
+              <p className="community-updates-live-note">
+                Official posts from partner accounts appear below together with any items we have confirmed in our static
+                catalog. For informal questions, use the Discussion tab.
+              </p>
+              {annError ? (
+                <div className="community-chat-error" role="alert">
+                  Could not load live updates: {annError}
+                </div>
+              ) : null}
+              {annLoading && mergedUpdates.length === 0 ? (
+                <p className="community-panel-note">Loading updates…</p>
+              ) : null}
               <p className="community-updates-lead">
-                Short updates for this network. Have something to share? Use the{' '}
+                Community-specific posts are only added when we have confirmed details from organizers.
+                Have something to share? Use the{' '}
                 <button type="button" className="community-inline-link" onClick={() => setTab('chat')}>
                   Discussion
                 </button>{' '}
-                tab when it is open, or reach us through the links on the side.
+                tab when it is open, or use the sidebar links.
               </p>
-              <ul className="community-updates-list">
-                {comm.updates.map((u, i) => (
-                  <li key={i} className="community-update-card">
-                    <div className="community-update-meta">
-                      <time dateTime={u.date}>{format_update_date(u.date)}</time>
-                    </div>
-                    <h3 className="community-update-title">{u.title}</h3>
-                    <p className="community-update-body">{u.body}</p>
-                  </li>
-                ))}
-              </ul>
+              {mergedUpdates.length ? (
+                <ul className="community-updates-list">
+                  {mergedUpdates.map((u, i) => (
+                    <li key={`${u.date}-${u.title}-${i}`} className="community-update-card">
+                      <div className="community-update-meta">
+                        <time dateTime={u.date}>{format_update_date(u.date)}</time>
+                        {u.kind === 'event' ? (
+                          <span className="community-update-badge community-update-badge--event">Event</span>
+                        ) : u.kind === 'news' ? (
+                          <span className="community-update-badge">News</span>
+                        ) : null}
+                      </div>
+                      <h3 className="community-update-title">{u.title}</h3>
+                      <p className="community-update-body">{u.body}</p>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="community-updates-empty">
+                  No dated announcements are on file here yet. Everyday coordination belongs in Discussion;
+                  urgent needs belong with the helplines above, not on the board.
+                </p>
+              )}
             </div>
           ) : null}
 
           {tab === 'chat' ? (
-            <CommunityChat
-              communityId={comm.id}
-              communityLabel={comm.name}
-              conversationStarters={comm.conversationStarters}
-            />
+            <div
+              id="hub-panel-chat"
+              role="tabpanel"
+              aria-labelledby="hub-tab-chat"
+              tabIndex={0}
+              className="community-hub-panel"
+            >
+              <CommunityChat
+                communityId={comm.id}
+                communityLabel={comm.name}
+                conversationStarters={comm.conversationStarters}
+              />
+            </div>
           ) : null}
         </div>
 

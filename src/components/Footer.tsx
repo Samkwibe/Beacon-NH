@@ -1,9 +1,10 @@
 import { Link } from 'react-router-dom'
+import { LEGAL_603_INTAKE, NHLA_MANCHESTER } from '../data/nhPublicResources'
 
 const contactEmail = import.meta.env.VITE_CONTACT_EMAIL?.trim()
 
 export function Footer() {
-  const contactHref = contactEmail ? `mailto:${contactEmail}` : '/donate'
+  const contactHref = contactEmail ? `mailto:${contactEmail}` : '/support'
 
   return (
     <footer>
@@ -34,19 +35,25 @@ export function Footer() {
             </div>
           </Link>
           <p>
-            A welcoming community hub for refugees and asylum seekers in Manchester, New Hampshire.
-            Free, safe, confidential, and multilingual.
+            A student-built hub that links neighbors in Manchester to verified statewide programs.
           </p>
           <div className="ft-emergency">
             <p>
-              <strong>Emergency housing?</strong>
+              <strong>Need help choosing a program?</strong>
               <br />
-              Dial <strong>211</strong> — NH helpline, free, 24/7
+              Dial <strong>211</strong> — NH information line (24/7)
               <br />
               <span style={{ fontSize: '11px', opacity: 0.6 }}>
-                Mental health crisis: <strong>988</strong> · Legal aid NHLA:{' '}
-                <a href="tel:+16036242010" style={{ color: 'inherit' }}>
-                  (603) 624-2010
+                Crisis: <strong>988</strong>
+                {' · '}
+                Civil legal screening:{' '}
+                <a href={LEGAL_603_INTAKE.telHref} style={{ color: 'inherit' }}>
+                  {LEGAL_603_INTAKE.phoneDisplay}
+                </a>
+                {' · '}
+                NHLA Manchester:{' '}
+                <a href={NHLA_MANCHESTER.telHref} style={{ color: 'inherit' }}>
+                  {NHLA_MANCHESTER.phoneDisplay}
                 </a>
               </span>
             </p>
@@ -54,7 +61,8 @@ export function Footer() {
         </div>
         <div className="ft-col">
           <h5>Services</h5>
-          <Link to="/services#help-housing">Housing Support</Link>
+          <Link to="/#iine-spotlight">IINE — Manchester programs</Link>
+          <Link to="/services#nh-refugee-needs">NH newcomer pathways</Link>
           <Link to="/services#help-legal">Legal Aid</Link>
           <Link to="/services#help-education">English Classes</Link>
           <a href="tel:988">Mental Health (988)</a>
@@ -66,7 +74,7 @@ export function Footer() {
           <Link to="/events">Events Calendar</Link>
           <Link to="/events#resources">Resource Map</Link>
           <Link to="/stories">Community Stories</Link>
-          <Link to="/donate">Donate</Link>
+          <Link to="/support">Support partners</Link>
           <Link to="/communities">Communities</Link>
         </div>
         <div className="ft-col">
@@ -78,16 +86,16 @@ export function Footer() {
           {contactEmail ? (
             <a href={contactHref}>Contact Us</a>
           ) : (
-            <Link to="/donate">Contact / Support</Link>
+            <Link to="/support">Contact / Support</Link>
           )}
           <Link to="/privacy">Privacy & confidentiality</Link>
           <span className="ft-muted-link">We strive for accessible design — tell us if something blocks you.</span>
         </div>
       </div>
       <div className="ft-bottom">
-        <p>
-          © 2026 Beacon NH · Manchester, NH · All services free & confidential
-        </p>
+          <p>
+            © 2026 Beacon NH · Manchester, NH · Links to public programs; confirm details with each agency.
+          </p>
         <div className="socials">
           <a
             href="https://www.facebook.com/"

@@ -43,7 +43,7 @@ services:
       NODE_ENV: production
       GOOGLE_APPLICATION_CREDENTIALS: /secrets/firebase-admin.json
     volumes:
-      # Omit this volume if you set FIREBASE_SERVICE_ACCOUNT_JSON instead (see DEPLOY.txt).
+      # Omit this volume if you set FIREBASE_SERVICE_ACCOUNT_JSON instead (see DEPLOYMENT.md).
       - ./server/firebase-admin.json:/secrets/firebase-admin.json:ro
     depends_on:
       mysql:

@@ -14,9 +14,6 @@ if (existsSync(envPath)) {
   // Override inherited shell GOOGLE_APPLICATION_CREDENTIALS so server/.env wins (BeaconNH key).
   dotenv.config({ path: envPath, override: true })
 }
-const defaultEvents = JSON.parse(
-  readFileSync(join(__dirname, '..', 'default-events.json'), 'utf8'),
-)
 
 function initFirebaseAdmin() {
   if (admin.apps.length) return true
@@ -74,40 +71,78 @@ function parseCorsOrigin() {
   return list
 }
 
-const useMysqlSsl =
-  process.env.MYSQL_SSL === '1' || process.env.MYSQL_SSL === 'true'
+/** Parse mysql://user:pass@host:port/db (Railway MYSQL_URL / MYSQL_PUBLIC_URL). */
+function configFromMysqlJdbcUrl(urlString) {
+  const u = new URL(urlString.trim())
+  const db =
+    decodeURIComponent((u.pathname || '').replace(/^\//, '').split('?')[0] || '') || 'railway'
+  const port = u.port ? Number(u.port) : 3306
+  return {
+    host: u.hostname,
+    port,
+    user: decodeURIComponent(u.username || ''),
+    password: decodeURIComponent(u.password || ''),
+    database: db,
+  }
+}
 
-/** Railway MySQL uses MYSQLHOST / MYSQLUSER / …; local Docker uses MYSQL_HOST / MYSQL_USER / … */
-const pool = mysql.createPool({
-  host:
-    process.env.MYSQL_HOST ??
-    process.env.MYSQLHOST ??
-    '127.0.0.1',
-  port: Number(
-    process.env.MYSQL_PORT ?? process.env.MYSQLPORT ?? 3306,
-  ),
-  user:
-    process.env.MYSQL_USER ?? process.env.MYSQLUSER ?? 'root',
-  password:
-    process.env.MYSQL_PASSWORD ??
-    process.env.MYSQLPASSWORD ??
-    '',
-  database:
-    process.env.MYSQL_DATABASE ??
-    process.env.MYSQLDATABASE ??
-    'beaconnh',
-  waitForConnections: true,
-  connectionLimit: 10,
-  ...(useMysqlSsl
-    ? {
-        ssl: {
-          rejectUnauthorized:
-            process.env.MYSQL_SSL_REJECT_UNAUTHORIZED !== '0' &&
-            process.env.MYSQL_SSL_REJECT_UNAUTHORIZED !== 'false',
-        },
+function buildMysqlPoolOptions() {
+  const useMysqlSslFlag =
+    process.env.MYSQL_SSL === '1' || process.env.MYSQL_SSL === 'true'
+  const disableMysqlSsl =
+    process.env.MYSQL_SSL === '0' || process.env.MYSQL_SSL === 'false'
+
+  const urlRaw =
+    process.env.MYSQL_URL?.trim() ||
+    process.env.MYSQL_PUBLIC_URL?.trim() ||
+    process.env.DATABASE_URL?.trim()
+
+  const base = urlRaw
+    ? configFromMysqlJdbcUrl(urlRaw)
+    : {
+        host:
+          process.env.MYSQL_HOST ??
+          process.env.MYSQLHOST ??
+          '127.0.0.1',
+        port: Number(process.env.MYSQL_PORT ?? process.env.MYSQLPORT ?? 3306),
+        user: process.env.MYSQL_USER ?? process.env.MYSQLUSER ?? 'root',
+        password:
+          process.env.MYSQL_PASSWORD ??
+          process.env.MYSQLPASSWORD ??
+          '',
+        database:
+          process.env.MYSQL_DATABASE ??
+          process.env.MYSQLDATABASE ??
+          'beaconnh',
       }
-    : {}),
-})
+
+  const publicRailwayHost =
+    typeof base.host === 'string' && base.host.includes('rlwy.net')
+  const useSsl =
+    !disableMysqlSsl && (useMysqlSslFlag || publicRailwayHost)
+
+  const sslRejectUnauthorized = publicRailwayHost
+    ? process.env.MYSQL_SSL_REJECT_UNAUTHORIZED === '1' ||
+      process.env.MYSQL_SSL_REJECT_UNAUTHORIZED === 'true'
+    : process.env.MYSQL_SSL_REJECT_UNAUTHORIZED !== '0' &&
+      process.env.MYSQL_SSL_REJECT_UNAUTHORIZED !== 'false'
+
+  return {
+    ...base,
+    waitForConnections: true,
+    connectionLimit: 10,
+    ...(useSsl
+      ? {
+          ssl: {
+            rejectUnauthorized: sslRejectUnauthorized,
+          },
+        }
+      : {}),
+  }
+}
+
+/** Railway MySQL: prefer MYSQL_URL / MYSQL_PUBLIC_URL so public proxy works when *.railway.internal does not resolve. */
+const pool = mysql.createPool(buildMysqlPoolOptions())
 
 function rowToEvent(row) {
   const d = row.event_date
@@ -135,6 +170,52 @@ app.use(
   }),
 )
 app.use(express.json({ limit: '512kb' }))
+
+app.post('/api/ai-assistant', async (req, res) => {
+  const key = process.env.OPENAI_API_KEY?.trim()
+  if (!key) {
+    return res.status(503).json({ error: 'AI assistant is not configured on this server' })
+  }
+  const { messages } = req.body ?? {}
+  if (!Array.isArray(messages)) {
+    return res.status(400).json({ error: 'messages array required' })
+  }
+  const cleaned = messages
+    .filter((m) => m && typeof m === 'object' && (m.role === 'user' || m.role === 'assistant'))
+    .map((m) => ({ role: m.role, content: String(m.content ?? '').slice(0, 8000) }))
+    .filter((m) => m.content.length > 0)
+    .slice(-14)
+  if (cleaned.length === 0) {
+    return res.status(400).json({ error: 'At least one user or assistant message is required' })
+  }
+  const system = `You are Beacon NH's triage helper for newcomers in Manchester, New Hampshire.
+You are not a lawyer or doctor. For emergencies say 911; mental health crisis 988; general referrals 211 NH.
+Give short, practical steps. Prefer linking to 211nh.org, nh.gov, or resettlement agencies' public pages when relevant.
+Do not invent phone numbers or government programs. If unsure, tell the user to dial 211 or speak with their case manager.`
+  try {
+    const r = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${key}`,
+      },
+      body: JSON.stringify({
+        model: process.env.OPENAI_MODEL?.trim() || 'gpt-4o-mini',
+        messages: [{ role: 'system', content: system }, ...cleaned],
+        max_tokens: 600,
+      }),
+    })
+    const data = await r.json()
+    if (!r.ok) {
+      const msg = data?.error?.message || data?.error || r.statusText || 'OpenAI request failed'
+      return res.status(502).json({ error: String(msg) })
+    }
+    const text = data?.choices?.[0]?.message?.content ?? ''
+    res.json({ reply: String(text) })
+  } catch (e) {
+    res.status(500).json({ error: e instanceof Error ? e.message : 'AI request failed' })
+  }
+})
 
 app.get('/api/health', async (_req, res) => {
   let mysqlOk = false
@@ -209,41 +290,11 @@ app.delete('/api/events/:id', verifyBearer, async (req, res) => {
   }
 })
 
-app.post('/api/admin/seed-demo', verifyBearer, async (_req, res) => {
-  const conn = await pool.getConnection()
-  try {
-    await conn.beginTransaction()
-    const [countRows] = await conn.query('SELECT COUNT(*) AS c FROM events')
-    const n = Number(countRows[0]?.c ?? 0)
-    if (n > 0) {
-      await conn.rollback()
-      return res.status(409).json({ error: 'events table is not empty' })
-    }
-    for (const ev of defaultEvents) {
-      const id = randomUUID()
-      await conn.execute(
-        `INSERT INTO events (id, title, \`desc\`, event_date, location, category, img, is_featured)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-        [
-          id,
-          ev.title,
-          ev.desc,
-          ev.date,
-          ev.location,
-          ev.category,
-          ev.img ?? '',
-          ev.isFeatured ? 1 : 0,
-        ],
-      )
-    }
-    await conn.commit()
-    res.json({ ok: true, inserted: defaultEvents.length })
-  } catch (e) {
-    await conn.rollback()
-    res.status(500).json({ error: e instanceof Error ? e.message : 'Seed failed' })
-  } finally {
-    conn.release()
-  }
+app.post('/api/admin/seed-demo', verifyBearer, (_req, res) => {
+  res.status(410).json({
+    error:
+      'Demo seed is disabled. Add real events with POST /api/events (or the admin UI).',
+  })
 })
 
 app.post('/api/rsvps', async (req, res) => {
@@ -291,6 +342,13 @@ app.get('/api/rsvps', verifyBearer, async (_req, res) => {
 const port = Number(process.env.PORT ?? 3001)
 const host = process.env.HOST ?? '0.0.0.0'
 app.listen(port, host, () => {
+  const jdbc =
+    process.env.MYSQL_URL?.trim() ||
+    process.env.MYSQL_PUBLIC_URL?.trim() ||
+    process.env.DATABASE_URL?.trim()
   console.log(`Beacon NH API listening on ${host}:${port}`)
+  console.log(
+    `MySQL: ${jdbc ? 'JDBC URL (MYSQL_URL / MYSQL_PUBLIC_URL / DATABASE_URL)' : 'discrete MYSQLHOST + credentials'}`,
+  )
   console.log(`Firebase Admin: ${firebaseReady ? 'ready' : 'NOT configured (admin routes will fail)'}`)
 })

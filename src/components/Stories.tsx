@@ -1,10 +1,11 @@
 import { usePageMeta } from '../hooks/usePageMeta'
 import { ImpactStrip } from './ImpactStrip'
+import { Link } from 'react-router-dom'
 
 export function Stories() {
   usePageMeta(
     'Stories',
-    'Voices from refugee and asylum-seeking families rebuilding their lives in Manchester, NH with Beacon NH.',
+    'How Beacon NH treats community voices: consent-first, source-based information for Manchester, NH.',
   )
   return (
     <div className="page-with-nav">
@@ -12,42 +13,50 @@ export function Stories() {
 
       <section className="stories" id="stories">
         <div className="section-header">
-          <div className="s-eyebrow"><div className="s-line"></div><span className="s-eye">Real Voices</span></div>
-          <h2 className="s-title">Stories From Our <em>Community</em></h2>
-          <p className="s-sub">Hear from families who found safety, support, and belonging through Beacon NH.</p>
+          <div className="s-eyebrow"><div className="s-line"></div><span className="s-eye">Voices</span></div>
+          <h2 className="s-title">Stories With <em>Consent &amp; Context</em></h2>
+          <p className="s-sub">
+            We do not invent quotes or stock-photo “testimonials.” First-person stories belong to real people
+            who choose to share them. Until your organization publishes vetted interviews or videos with
+            permission, use this space to route neighbors to verified programs and events.
+          </p>
         </div>
-        <div className="stories-grid">
-          <div className="story-big">
-            <video autoPlay loop muted playsInline style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', zIndex: 0, filter: 'brightness(0.6) saturate(0.75)' }}>
-              <source src="/pakistan.mp4" type="video/mp4" />
-            </video>
-            <div className="story-big-overlay"></div>
-            <div className="story-big-play"><div className="play-tri"></div></div>
-            <div className="story-big-body">
-              <span className="story-country-tag">🇨🇩 DR Congo</span>
-              <h3>"A New Beginning After the Storm"</h3>
-              <p>Beacon NH helped our family rebuild our lives after fleeing the conflict in the DRC. We are finally safe, and we have found a beautiful community here.</p>
-            </div>
+        <div className="stories-grid stories-grid--plain">
+          <div className="story-card story-card--info">
+            <h3>Where to learn more</h3>
+            <p>
+              NH DHHS summarizes how the U.S. Refugee Admissions Program runs in New Hampshire — including which
+              resettlement agencies hold federal agreements for the state.
+            </p>
+            <a
+              className="btn-primary"
+              href="https://www.dhhs.nh.gov/programs-services/health-equity/operation-united-states-refugee-admissions-program-new-hampshire"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              NH DHHS — refugee program →
+            </a>
           </div>
-          <div className="story-sm">
-            <div className="story-sm-img"><img src="/pexels-hosny-salah-21693143-36450021.jpg" alt="Syrian Father and Child" /></div>
-            <span className="story-country-tag" style={{ marginBottom: '12px' }}>🇸🇾 Syria</span>
-            <h4>"They Spoke My Language"</h4>
-            <p>The legal team helped with my asylum case entirely in Arabic. Today I have refugee status and I volunteer here to help others.</p>
-            <div className="story-sm-author">
-              <img className="story-avatar" src="/pexels-hosny-salah-21693143-36450021.jpg" alt="Tariq" />
-              <div><div className="sa-name">Tariq M.</div><div className="sa-from">Now a Beacon NH volunteer</div></div>
-            </div>
+          <div className="story-card story-card--info">
+            <h3>Urgent support lines</h3>
+            <p>
+              These numbers are maintained by their host agencies — same entries we use elsewhere on the site.
+            </p>
+            <ul className="story-info-list">
+              <li><a href="tel:211">211</a> — NH information & referral</li>
+              <li><a href="tel:988">988</a> — Crisis &amp; suicide lifeline</li>
+              <li><a href="tel:+18006395290">1-800-639-5290</a> — 603 Legal Aid intake</li>
+            </ul>
           </div>
-          <div className="story-sm">
-            <div className="story-sm-img"><img src="/pexels-safari-consoler-3290243-19297741.jpg" alt="Oksana" /></div>
-            <span className="story-country-tag" style={{ marginBottom: '12px' }}>🇺🇦 Ukraine</span>
-            <h4>"Housing In Three Days"</h4>
-            <p>I arrived alone with two children. Beacon NH found us a home in three days and connected us with the Ukrainian community here.</p>
-            <div className="story-sm-author">
-              <img className="story-avatar" src="/pexels-safari-consoler-3290243-19297741.jpg" alt="Oksana" />
-              <div><div className="sa-name">Oksana V.</div><div className="sa-from">Manchester NH · arrived 2022</div></div>
-            </div>
+          <div className="story-card story-card--info">
+            <h3>On-campus / portfolio use</h3>
+            <p>
+              For a course project, replace this section with a short methodology note (IRB, consent forms, or a
+              link to your institution’s ethics guidelines) when you interview subjects.
+            </p>
+            <p style={{ marginTop: '12px' }}>
+              <Link to="/events" className="btn-secondary">See upcoming events</Link>
+            </p>
           </div>
         </div>
       </section>

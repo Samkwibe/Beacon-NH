@@ -4,7 +4,7 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev
 
-COPY schema.sql default-events.json ./
+COPY schema.sql ./
 COPY src ./src
 
 ENV NODE_ENV=production

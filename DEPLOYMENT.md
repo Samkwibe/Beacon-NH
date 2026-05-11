@@ -1,5 +1,55 @@
-BeaconNH deployment checklist
-==============================
+# Beacon NH — deployment checklist
+
+Legacy plain-text outline retained below for terminal-friendly reading.
+
+Do this today (smoke test + wire prod)
+---------------------------------------
+1) Railway API service → Variables: reference your **MySQL** service so you get MYSQLHOST (not
+   127.0.0.1). If `/api/health` shows `"mysql":false` and `"error":"connect ECONNREFUSED 127.0.0.1:3306"`,
+   the API is still using local defaults — add MySQL references (see step 4 below).
+2) Paste **FIREBASE_SERVICE_ACCOUNT_JSON** (one-line JSON) on the API service so `"firebaseAdmin":true`
+   after redeploy.
+3) Run **server/schema.sql** once against that MySQL database if you have not already.
+4) Vercel → Production env: set **VITE_API_URL** = `https://YOUR-API.up.railway.app` (no trailing slash).
+   **Do not rely on vercel.json for this** — the repo only keeps SPA rewrites there.
+5) Vercel: set **VITE_FIREBASE_*** for the web app; redeploy frontend.
+6) Firebase Console → Authentication → enable **Anonymous** (community chat) and **Email/Password**
+   (admins). Deploy Firestore: from repo root, `firebase deploy --only firestore` (uses firebase.json).
+7) Add real events: production **Admin** (with `VITE_PUBLIC_ADMIN=true` on that deploy) or `POST /api/events`.
+   Demo seed is **disabled** (`POST /api/admin/seed-demo` returns 410).
+8) Optional: from repo root, `SMOKE_API_URL=https://YOUR-API… npm run smoke:api` — expect `"mysql":true`
+   and `"firebaseAdmin":true` when fully wired.
+
+Where each variable goes (important)
+------------------------------------
+You cannot set production from the CLI in this repo — use the host dashboards. Do **not** put **VITE_***
+variables on Railway’s **API** service: Vite only reads them when **building** the SPA (Vercel), and the
+Node server ignores them.
+
+**Railway → your API service (Node / Dockerfile.api) — set ONLY backend vars**
+  • MySQL — either:
+    - **Preferred when internal host fails:** On the API service, add a **Variable reference** to the
+      MySQL service’s **MYSQL_PUBLIC_URL** (full `mysql://…@…rlwy.net:PORT/…` URL). The API parses this
+      and connects over Railway’s public proxy (fixes `getaddrinfo ENOTFOUND mysql.railway.internal`).
+    - **Or** reference **MYSQLHOST**, **MYSQLPORT**, **MYSQLUSER**, **MYSQLPASSWORD**, **MYSQLDATABASE**
+      if private networking resolves in your project.
+  • CORS_ORIGIN — your live site origin(s), no trailing slash, e.g. `https://beacon-nh.vercel.app` or
+    comma-separated if you have several.
+  • FIREBASE_SERVICE_ACCOUNT_JSON — full **service account** JSON as one line (Firebase Console → Project
+    settings → Service accounts → Generate new private key). Same Firebase **project** as the web app.
+  • Optional: **MYSQL_SSL** (usually unnecessary for `*.rlwy.net`; see server/.env.example), HEALTHCHECK_REQUIRE_MYSQL, PORT (host usually sets PORT).
+
+**Remove from Railway if you added them by mistake:** VITE_FIREBASE_*, VITE_API_URL, VITE_WHATSAPP_E164,
+VITE_LOCAL_ADMIN_PASSWORD, VITE_CONTACT_EMAIL — move those to Vercel (below).
+
+**Vercel → your frontend project — set all VITE_* vars (Production + Preview as needed)**
+  • VITE_API_URL — public API base URL, e.g. `https://YOUR-SERVICE.up.railway.app` (no trailing slash,
+    **not** http://localhost:3001).
+  • VITE_FIREBASE_API_KEY, VITE_FIREBASE_AUTH_DOMAIN, VITE_FIREBASE_PROJECT_ID,
+    VITE_FIREBASE_STORAGE_BUCKET, VITE_FIREBASE_MESSAGING_SENDER_ID, VITE_FIREBASE_APP_ID — from Firebase
+    Console → Project settings → Your apps → Web app config.
+  • Optional: VITE_WHATSAPP_E164, VITE_CONTACT_EMAIL, VITE_PUBLIC_ADMIN=true, VITE_ADMIN_ROUTE=…
+  • Redeploy the Vercel project after changing VITE_* so the new values are compiled into the bundle.
 
 Frontend (Vercel, Netlify, etc.)
 --------------------------------
@@ -44,8 +94,24 @@ Local stack: MySQL + API in Docker
 
 Railway (API + MySQL on Railway)
 --------------------------------
-Repo: https://github.com/YOU/BeaconNH (or your fork). You need one Railway **project** with two
-services: **MySQL** and the **Beacon API**.
+Repo: https://github.com/YOU/BeaconNH (or your fork). You need one Railway **project** with **two**
+tile/services: **MySQL** and the **Beacon API**. Having only the API (no database tile) is why you see
+`ECONNREFUSED 127.0.0.1:3306` — add MySQL first, then reference its variables into the API.
+
+**If MySQL is not in your project yet — add it yourself (Railway does not read this repo to create DBs):**
+
+  • **Dashboard:** Project canvas → **+ New** → **Database** → **MySQL** → wait until the service is
+    running.  
+  • **CLI:** [Install Railway CLI](https://docs.railway.com/develop/cli) → `railway login` → `railway link`
+    (choose **this** project and environment) → from any folder:
+
+      railway add --database mysql
+
+    Railway provisions MySQL and exposes **MYSQLHOST**, **MYSQLPORT**, **MYSQLUSER**,
+    **MYSQLPASSWORD**, **MYSQLDATABASE** on that database service.
+
+**Then:** On your **API** service → **Variables** → add **References** to those MySQL variables (see
+step 4 below). Run **server/schema.sql** once against that database.
 
 1) Create project
    - railway.app → New Project → Deploy from GitHub → select this repository.
@@ -151,6 +217,21 @@ D) Firebase Auth (admin + API writes)
 E) Smoke test
    - Open the production site → Events should load from GET /api/events.
    - Submit a test RSVP → row appears in MySQL; list RSVPs in admin after signing in.
+
+AI help guide (optional)
+-----------------------
+The floating **AI** button is off unless you set **`VITE_AI_HELPER_ENABLED=true`** on the **frontend** build (Vercel).
+
+1. **API (Railway or other host)** — set secrets:
+   - `OPENAI_API_KEY` — required for `POST /api/ai-assistant` to return answers (never put this in Vite / the browser).
+   - Optional: `OPENAI_MODEL` (defaults to `gpt-4o-mini`).
+2. **Frontend** — same as events: **`VITE_API_URL`** must point at your API so the SPA can call `/api/ai-assistant`.
+3. Redeploy both so env vars apply.
+4. Quick check (replace URL):  
+   `curl -sS -X POST "https://YOUR-API-HOST/api/ai-assistant" -H "Content-Type: application/json" -d '{"messages":[{"role":"user","content":"Say hello in five words."}]}'`  
+   Expect JSON `{"reply":"..."}`. If you see `AI assistant is not configured`, the API is missing `OPENAI_API_KEY`.
+
+**Note:** Community **Discussion** tabs are separate (Firestore chat among neighbors, not OpenAI).
 
 Secrets
 -------

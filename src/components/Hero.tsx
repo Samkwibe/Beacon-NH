@@ -1,33 +1,25 @@
-import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 
 export function Hero() {
   const { t } = useTranslation()
-  const [videoTipOpen, setVideoTipOpen] = useState(false)
 
   return (
     <section className="hero">
       <div className="hero-bg">
-        <video autoPlay loop muted playsInline style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}>
-          <source src="/14660672_3840_2160_50fps.mp4" type="video/mp4" />
-        </video>
+        <div
+          className="hero-bg-canvas"
+          aria-hidden
+          style={{
+            width: '100%',
+            height: '100%',
+            minHeight: '100%',
+            background:
+              'linear-gradient(120deg, #0f241c 0%, #1a4d3a 35%, #2a6b52 70%, #14332a 100%)',
+          }}
+        />
         <div className="hero-bg-overlay"></div>
         <div className="hero-bg-side"></div>
-        <div className="hero-video-ph">
-          <button
-            type="button"
-            className="play-ring play-ring--btn"
-            aria-haspopup="dialog"
-            aria-expanded={videoTipOpen}
-            onClick={() => setVideoTipOpen(true)}
-          >
-            <div className="play-circle">
-              <div className="play-triangle"></div>
-            </div>
-            <span className="play-label">{t('hero.watchStory')}</span>
-          </button>
-        </div>
       </div>
       <div className="hero-content">
         <div className="hero-eyebrow">
@@ -40,7 +32,7 @@ export function Hero() {
           <Link to="/#help" className="btn-primary">
             {t('hero.btnPrimary')}
           </Link>
-          <Link to="/stories" className="btn-secondary">
+          <Link to="/about" className="btn-secondary">
             {t('hero.btnSecondary')}
           </Link>
         </div>
@@ -52,33 +44,10 @@ export function Hero() {
         </div>
       </div>
       <div className="hero-badge">
-        <div className="hb-icon">🏠</div>
-        <div className="hb-title">Emergency Housing</div>
-        <div className="hb-desc">Same-day referrals across Manchester NH</div>
-        <span className="hb-tag">Available Now</span>
-      </div>
-
-      <div
-        className={`modal-bg ${videoTipOpen ? 'open' : ''}`}
-        role="presentation"
-        onClick={(e) => {
-          if ((e.target as HTMLElement).classList.contains('modal-bg')) setVideoTipOpen(false)
-        }}
-      >
-        <div className="modal hero-video-modal" role="dialog" aria-modal="true" aria-labelledby="hero-video-tip-title">
-          <button type="button" className="modal-close" onClick={() => setVideoTipOpen(false)}>
-            ✕
-          </button>
-          <h2 id="hero-video-tip-title">Community spotlight video</h2>
-          <p>
-            Replace this looping background with your flagship story: upload to YouTube or Vimeo, then embed the player in{' '}
-            <code className="hero-code">Hero.tsx</code> or swap the <code className="hero-code">&lt;video&gt;</code> source.
-          </p>
-          <p className="hero-video-tip-note">Tip: keep files compressed under ~8&nbsp;MB for fast loads on mobile data.</p>
-          <button type="button" className="btn-primary hero-video-tip-dismiss" onClick={() => setVideoTipOpen(false)}>
-            Got it
-          </button>
-        </div>
+        <div className="hb-icon">📞</div>
+        <div className="hb-title">211 NH</div>
+        <div className="hb-desc">Free information & referral — 24 hours a day</div>
+        <a className="hb-tag" href="tel:211" style={{ textDecoration: 'none' }}>Call 211</a>
       </div>
     </section>
   )

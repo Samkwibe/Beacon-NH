@@ -146,7 +146,10 @@ export function CommunityChat({
       )
     }
     return (
-      <div className="community-panel community-panel--welcome">
+      <section
+        className="community-panel community-panel--welcome"
+        aria-label={`${communityLabel} discussion`}
+      >
         <h2 className="community-board-title">Community discussion</h2>
         <p className="community-board-lead">
           This is a public space for {communityLabel} to share <strong>community news</strong>,{' '}
@@ -170,12 +173,12 @@ export function CommunityChat({
             </ul>
           </div>
         ) : null}
-      </div>
+      </section>
     )
   }
 
   return (
-    <div className="community-panel community-chat">
+    <section className="community-panel community-chat" aria-label={`${communityLabel} discussion`}>
       {error ? <div className="community-chat-error" role="alert">{error}</div> : null}
       {conversationStarters.length > 0 ? (
         <div className="community-chat-starters">
@@ -236,7 +239,11 @@ export function CommunityChat({
         <div ref={bottomRef} />
       </div>
       <div className="community-chat-compose">
+        <label htmlFor={`chat-msg-${communityId}`} className="community-chat-label">
+          Your message (shown to everyone in this hub)
+        </label>
         <textarea
+          id={`chat-msg-${communityId}`}
           className="community-chat-textarea"
           rows={3}
           maxLength={2000}
@@ -258,6 +265,6 @@ export function CommunityChat({
         Be respectful. No hate or harassment. For emergencies call <strong>911</strong>. For private help,
         use <strong>Get help</strong> or email Beacon NH — do not post sensitive personal details here.
       </p>
-    </div>
+    </section>
   )
 }

@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { usePageMeta } from '../hooks/usePageMeta'
-import { COMMUNITIES } from '../data/communitiesCatalog'
+import { COMMUNITIES, communityHubGradient } from '../data/communitiesCatalog'
 
 export function Communities() {
   usePageMeta(
@@ -51,21 +51,23 @@ export function Communities() {
             <h3 className="community-landing-quick-title">Events</h3>
             <p className="community-landing-quick-desc">Workshops, meals, clinics, and gatherings.</p>
           </Link>
-          <Link className="community-landing-quick-card" to="/donate">
+          <Link className="community-landing-quick-card" to="/support">
             <span className="community-landing-quick-emoji" aria-hidden>
               ❤️
             </span>
-            <h3 className="community-landing-quick-title">Donate</h3>
-            <p className="community-landing-quick-desc">Keep these programs free for families.</p>
+            <h3 className="community-landing-quick-title">Support</h3>
+            <p className="community-landing-quick-desc">Give through trusted NH nonprofits with real fiscal sponsors.</p>
           </Link>
         </div>
 
         <div className="communities-grid">
           {COMMUNITIES.map((comm) => (
             <article key={comm.id} className="community-card">
-              <div className="community-card-img">
-                <img src={comm.img} alt={comm.name} />
-              </div>
+              <div
+                className="community-card-img community-card-img--gradient"
+                style={{ background: communityHubGradient(comm.id) }}
+                aria-hidden
+              />
               <div className="community-card-body">
                 <span className="story-country-tag" style={{ marginBottom: '12px', background: '#4A9669' }}>
                   {comm.flag} {comm.name.split(' ')[0]}

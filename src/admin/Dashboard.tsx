@@ -9,6 +9,8 @@ import {
   writeBatch,
   doc,
   serverTimestamp,
+  addDoc,
+  deleteDoc,
 } from 'firebase/firestore'
 import {
   setPersistence,
@@ -25,9 +27,9 @@ import {
 } from '../context/DataContext'
 import {
   EVENT_CATEGORIES,
-  DEFAULT_EVENTS,
   type Event,
 } from '../data/eventsCatalog'
+import { COMMUNITIES } from '../data/communitiesCatalog'
 import { apiListRsvps, type ApiRsvpRow } from '../lib/beaconApi'
 
 type LocalRsvp = {
@@ -53,7 +55,7 @@ function loadLocalRsvps(): LocalRsvp[] {
 }
 
 export function Dashboard() {
-  usePageMeta('Admin', 'Beacon NH admin — manage events and RSVPs.')
+  usePageMeta('Admin', 'Beacon NH admin — events, RSVPs, and partner posts for community hubs.')
 
   const db = getDb()
   const auth = getFirebaseAuth()
@@ -61,7 +63,6 @@ export function Dashboard() {
     events,
     addEvent,
     deleteEvent,
-    seedDemoEvents,
     usesFirestore,
     usesMysqlApi,
     authUsesFirebase,
@@ -84,7 +85,7 @@ export function Dashboard() {
     import.meta.env.VITE_LOCAL_ADMIN_PASSWORD ??
     (import.meta.env.DEV ? 'admin123' : '')
 
-  const [tab, setTab] = useState<'events' | 'rsvps'>('events')
+  const [tab, setTab] = useState<'events' | 'rsvps' | 'communities'>('events')
 
   const [newTitle, setNewTitle] = useState('')
   const [newDate, setNewDate] = useState('')
@@ -93,6 +94,18 @@ export function Dashboard() {
   const [newLocation, setNewLocation] = useState('')
   const [newImg, setNewImg] = useState('')
   const [submitBusy, setSubmitBusy] = useState(false)
+
+  const showHubPublisher = Boolean(db) && authUsesFirebase && Boolean(user)
+
+  const [annCommunityId, setAnnCommunityId] = useState(() => COMMUNITIES[0]?.id ?? 'congolese')
+  const [annTitle, setAnnTitle] = useState('')
+  const [annBody, setAnnBody] = useState('')
+  const [annDate, setAnnDate] = useState(() => new Date().toISOString().slice(0, 10))
+  const [annKind, setAnnKind] = useState<'news' | 'event'>('news')
+  const [annBusy, setAnnBusy] = useState(false)
+  const [annRows, setAnnRows] = useState<
+    { id: string; communityId: string; title: string; date: string; kind: string }[]
+  >([])
 
   const [fireRsvps, setFireRsvps] = useState<
     { id: string; data: Record<string, unknown> }[]
@@ -161,6 +174,34 @@ export function Dashboard() {
       window.removeEventListener('storage', refresh)
     }
   }, [])
+
+  useEffect(() => {
+    if (!db || !user || tab !== 'communities') return
+    const q = query(
+      collection(db, 'community_announcements'),
+      orderBy('createdAt', 'desc'),
+      limit(80),
+    )
+    const unsub = onSnapshot(
+      q,
+      (snap) => {
+        setAnnRows(
+          snap.docs.map((d) => {
+            const x = d.data()
+            return {
+              id: d.id,
+              communityId: String(x.communityId ?? ''),
+              title: String(x.title ?? ''),
+              date: String(x.date ?? '').slice(0, 10),
+              kind: String(x.kind ?? 'news'),
+            }
+          }),
+        )
+      },
+      (err) => console.error(err),
+    )
+    return () => unsub()
+  }, [db, user, tab])
 
   const handleFirebaseLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -237,10 +278,33 @@ export function Dashboard() {
     }
   }
 
+  const handleCommunityAnnouncement = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!db || !user) return
+    setAnnBusy(true)
+    try {
+      await addDoc(collection(db, 'community_announcements'), {
+        communityId: annCommunityId,
+        title: annTitle.trim(),
+        body: annBody.trim(),
+        date: annDate.slice(0, 10),
+        kind: annKind,
+        createdAt: serverTimestamp(),
+        authorEmail: user.email ?? '',
+      })
+      setAnnTitle('')
+      setAnnBody('')
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : 'Could not publish post')
+    } finally {
+      setAnnBusy(false)
+    }
+  }
+
   const migrateLocalToFirebase = async () => {
     if (!db) return
     const raw = localStorage.getItem('beacon_events')
-    let list: Event[] = DEFAULT_EVENTS
+    let list: Event[] = []
     if (raw) {
       try {
         const parsed = JSON.parse(raw) as Event[]
@@ -248,6 +312,10 @@ export function Dashboard() {
       } catch {
         /* ignore */
       }
+    }
+    if (!list.length) {
+      alert('No events in this browser’s local storage to migrate.')
+      return
     }
     const batch = writeBatch(db)
     for (const ev of list) {
@@ -407,6 +475,15 @@ export function Dashboard() {
         >
           RSVPs
         </button>
+        {showHubPublisher ? (
+          <button
+            type="button"
+            className={`admin-tab ${tab === 'communities' ? 'admin-tab--on' : ''}`}
+            onClick={() => setTab('communities')}
+          >
+            Community hubs
+          </button>
+        ) : null}
       </div>
 
       {eventsError && (
@@ -477,40 +554,6 @@ export function Dashboard() {
 
             <div className="admin-tools">
               <h3 className="admin-h3">Tools</h3>
-              {usesMysqlApi && events.length === 0 && user && (
-                <button
-                  type="button"
-                  className="admin-btn admin-btn--secondary"
-                  onClick={async () => {
-                    try {
-                      const token = await user.getIdToken()
-                      await seedDemoEvents(token)
-                    } catch (err: unknown) {
-                      alert(err instanceof Error ? err.message : 'Seed failed')
-                    }
-                  }}
-                >
-                  Load demo events (MySQL)
-                </button>
-              )}
-              {usesFirestore && events.length === 0 && (
-                <button
-                  type="button"
-                  className="admin-btn admin-btn--secondary"
-                  onClick={() => seedDemoEvents()}
-                >
-                  Load demo events (Firestore)
-                </button>
-              )}
-              {!authUsesFirebase && (
-                <button
-                  type="button"
-                  className="admin-btn admin-btn--secondary"
-                  onClick={() => seedDemoEvents()}
-                >
-                  Reset demo events (local)
-                </button>
-              )}
               {usesFirestore && user && (
                 <button
                   type="button"
@@ -630,6 +673,99 @@ export function Dashboard() {
           {!authUsesFirebase && localRsvps.length === 0 && (
             <div className="admin-empty">No local RSVPs yet.</div>
           )}
+        </div>
+      )}
+
+      {tab === 'communities' && showHubPublisher && (
+        <div className="admin-grid">
+          <div>
+            <h2 className="admin-h2">Post to a community hub</h2>
+            <p className="admin-muted admin-lead">
+              Appears on that community&apos;s <strong>Updates</strong> tab. Create Firebase accounts for IINE staff
+              or trusted community reps; anyone signed in here can publish (tighten with Firebase custom claims later).
+            </p>
+            <form className="admin-card admin-form" onSubmit={handleCommunityAnnouncement}>
+              <label className="admin-label" htmlFor="ann-community">
+                Community
+              </label>
+              <select
+                id="ann-community"
+                className="admin-input"
+                value={annCommunityId}
+                onChange={(e) => setAnnCommunityId(e.target.value)}
+              >
+                {COMMUNITIES.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+              <input
+                className="admin-input"
+                required
+                placeholder="Title"
+                value={annTitle}
+                onChange={(e) => setAnnTitle(e.target.value)}
+                maxLength={200}
+              />
+              <input
+                className="admin-input"
+                required
+                type="date"
+                value={annDate}
+                onChange={(e) => setAnnDate(e.target.value)}
+              />
+              <select
+                className="admin-input"
+                value={annKind}
+                onChange={(e) => setAnnKind(e.target.value as 'news' | 'event')}
+              >
+                <option value="news">News / update</option>
+                <option value="event">Upcoming event (highlight)</option>
+              </select>
+              <textarea
+                className="admin-input admin-textarea"
+                required
+                placeholder="Details — time, place, who to contact (no sensitive personal data)"
+                value={annBody}
+                onChange={(e) => setAnnBody(e.target.value)}
+                rows={5}
+                maxLength={4000}
+              />
+              <button type="submit" className="admin-btn admin-btn--primary" disabled={annBusy}>
+                Publish to hub
+              </button>
+            </form>
+          </div>
+          <div>
+            <h2 className="admin-h2">Recent hub posts</h2>
+            <div className="admin-card admin-list">
+              {annRows.map((row) => (
+                <div key={row.id} className="admin-row admin-row--stack">
+                  <div className="admin-row-title">{row.title}</div>
+                  <div className="admin-muted admin-row-meta">
+                    {row.communityId} · {row.date} · {row.kind}
+                  </div>
+                  <button
+                    type="button"
+                    className="admin-btn admin-btn--danger"
+                    onClick={async () => {
+                      if (!db) return
+                      if (!window.confirm('Delete this post from the community hub?')) return
+                      try {
+                        await deleteDoc(doc(db, 'community_announcements', row.id))
+                      } catch (err: unknown) {
+                        alert(err instanceof Error ? err.message : 'Delete failed')
+                      }
+                    }}
+                  >
+                    Delete
+                  </button>
+                </div>
+              ))}
+              {annRows.length === 0 ? <div className="admin-empty">No hub posts yet.</div> : null}
+            </div>
+          </div>
         </div>
       )}
     </div>
